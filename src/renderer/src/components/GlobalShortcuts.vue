@@ -364,7 +364,28 @@ onUnmounted(() => {
 
 <style scoped>
 .content-panel {
-  max-width: 600px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+/* 自定义滚动条 */
+.content-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-panel::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.content-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 /* 顶部按钮 */

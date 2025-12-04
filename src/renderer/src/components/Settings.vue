@@ -114,25 +114,6 @@ const activeMenu = ref('general')
 /* 右侧内容区 */
 .settings-content {
   flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-}
-
-/* 自定义滚动条 */
-.settings-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.settings-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.settings-content::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.settings-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  overflow: hidden; /* 去除滚动，交给各个子组件处理 */
 }
 </style>

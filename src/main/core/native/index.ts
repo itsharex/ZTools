@@ -53,11 +53,11 @@ export class ClipboardMonitor {
 
     this._callback = callback
     this._isMonitoring = true
-      ; (addon as NativeAddon).startMonitor(() => {
-        if (this._callback) {
-          this._callback()
-        }
-      })
+    ;(addon as NativeAddon).startMonitor(() => {
+      if (this._callback) {
+        this._callback()
+      }
+    })
   }
 
   /**
@@ -68,7 +68,7 @@ export class ClipboardMonitor {
       return
     }
 
-    ; (addon as NativeAddon).stopMonitor()
+    ;(addon as NativeAddon).stopMonitor()
     this._isMonitoring = false
     this._callback = null
   }
@@ -105,11 +105,11 @@ export class WindowMonitor {
 
     this._callback = callback
     this._isMonitoring = true
-      ; (addon as NativeAddon).startWindowMonitor((windowInfo) => {
-        if (this._callback) {
-          this._callback(windowInfo)
-        }
-      })
+    ;(addon as NativeAddon).startWindowMonitor((windowInfo) => {
+      if (this._callback) {
+        this._callback(windowInfo)
+      }
+    })
   }
 
   /**
@@ -120,7 +120,7 @@ export class WindowMonitor {
       return
     }
 
-    ; (addon as NativeAddon).stopWindowMonitor()
+    ;(addon as NativeAddon).stopWindowMonitor()
     this._isMonitoring = false
     this._callback = null
   }

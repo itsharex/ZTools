@@ -109,7 +109,6 @@ const appDataStore = useAppDataStore()
 const {
   loading,
   search,
-  addToHistory,
   getRecentApps,
   removeFromHistory,
   pinApp,
@@ -399,9 +398,7 @@ async function handleAppContextMenu(
 async function handleSelectApp(app: any): Promise<void> {
   console.log('选择应用:', app)
   try {
-    // 添加到历史记录
-    await addToHistory(app)
-    // 启动应用或插件（后端会自动处理视图切换）
+    // 启动应用或插件（后端会自动处理视图切换和添加历史记录）
     await window.ztools.launch({
       path: app.path,
       type: app.type || 'app',

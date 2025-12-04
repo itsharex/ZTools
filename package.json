@@ -29,6 +29,7 @@
     "axios": "^1.13.2",
     "chokidar": "^4.0.3",
     "electron-updater": "^6.3.9",
+    "extract-file-icon": "^0.3.2",
     "fuse.js": "^7.0.0",
     "lmdb": "^3.4.4",
     "pinia": "^3.0.4",

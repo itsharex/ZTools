@@ -4,14 +4,10 @@ import path from 'path'
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import plist from 'simple-plist'
+import { App } from './types'
+import { pLimit } from './utils'
 
 const execAsync = promisify(exec)
-
-export interface App {
-  name: string
-  path: string
-  icon?: string
-}
 
 // 获取应用图标文件路径
 async function getIconFile(appPath: string): Promise<string> {
@@ -54,28 +50,6 @@ async function getIconFile(appPath: string): Promise<string> {
       )
     })
   })
-}
-
-// 并发控制函数
-async function pLimit<T>(tasks: (() => Promise<T>)[], concurrency: number): Promise<T[]> {
-  const results: T[] = []
-  const executing: Promise<void>[] = []
-
-  for (const task of tasks) {
-    const promise = task().then((result) => {
-      results.push(result)
-      executing.splice(executing.indexOf(promise), 1)
-    })
-
-    executing.push(promise)
-
-    if (executing.length >= concurrency) {
-      await Promise.race(executing)
-    }
-  }
-
-  await Promise.all(executing)
-  return results
 }
 
 export async function scanApplications(): Promise<App[]> {

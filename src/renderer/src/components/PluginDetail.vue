@@ -216,10 +216,14 @@ function cmdTypeBadge(cmd: any): string {
   margin-top: 12px;
   font-size: 14px;
   color: #374151;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .detail-section {
   margin-top: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .detail-section-title {
@@ -227,6 +231,8 @@ function cmdTypeBadge(cmd: any): string {
   font-weight: 600;
   color: #111827;
   margin-bottom: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 .feature-list {

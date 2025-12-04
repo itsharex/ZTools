@@ -1,18 +1,20 @@
 <template>
   <div class="content-panel">
-    <div class="panel-header">
-      <div class="button-group">
-        <button class="import-btn dev" :disabled="isImportingDev" @click="importDevPlugin">
-          {{ isImportingDev ? '添加中...' : '添加开发中插件' }}
-        </button>
-        <button class="import-btn" :disabled="isImporting" @click="importPlugin">
-          {{ isImporting ? '导入中...' : '导入本地插件' }}
-        </button>
+    <!-- 可滚动内容区 -->
+    <div class="scrollable-content">
+      <div class="panel-header">
+        <div class="button-group">
+          <button class="import-btn dev" :disabled="isImportingDev" @click="importDevPlugin">
+            {{ isImportingDev ? '添加中...' : '添加开发中插件' }}
+          </button>
+          <button class="import-btn" :disabled="isImporting" @click="importPlugin">
+            {{ isImporting ? '导入中...' : '导入本地插件' }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- 插件列表 -->
-    <div class="plugin-list">
+      <!-- 插件列表 -->
+      <div class="plugin-list">
       <div v-for="plugin in plugins" :key="plugin.path" class="plugin-item">
         <img v-if="plugin.logo" :src="plugin.logo" class="plugin-icon" alt="插件图标" />
         <div v-else class="plugin-icon-placeholder">🧩</div>
@@ -118,10 +120,11 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="plugins.length === 0" class="empty-state">
+      <div v-if="!isLoading && plugins.length === 0" class="empty-state">
         <div class="empty-icon">📦</div>
         <div class="empty-text">暂无插件</div>
         <div class="empty-hint">点击"导入本地插件"来安装你的第一个插件</div>
+      </div>
       </div>
     </div>
 
@@ -145,6 +148,7 @@ const appDataStore = useAppDataStore()
 // 插件相关状态
 const plugins = ref<any[]>([])
 const runningPlugins = ref<string[]>([])
+const isLoading = ref(true)
 const isImporting = ref(false)
 const isImportingDev = ref(false)
 const isDeleting = ref(false)
@@ -157,6 +161,7 @@ const selectedPlugin = ref<any | null>(null)
 
 // 加载插件列表
 async function loadPlugins(): Promise<void> {
+  isLoading.value = true
   try {
     const result = await window.ztools.getPlugins()
     plugins.value = result || []
@@ -164,6 +169,8 @@ async function loadPlugins(): Promise<void> {
     await loadRunningPlugins()
   } catch (error) {
     console.error('加载插件列表失败:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -276,11 +283,16 @@ async function handleKillPlugin(plugin: any): Promise<void> {
 // 打开插件
 async function handleOpenPlugin(plugin: any): Promise<void> {
   try {
-    await window.ztools.launch({
+    const result = await window.ztools.launch({
       path: plugin.path,
       type: 'plugin',
       param: {}
     })
+
+    // 检查返回结果
+    if (result && !result.success) {
+      alert(`无法打开插件: ${result.error || '未知错误'}`)
+    }
   } catch (error: any) {
     console.error('打开插件失败:', error)
     alert(`打开插件失败: ${error.message || '未知错误'}`)
@@ -331,8 +343,36 @@ function closePluginDetail(): void {
 
 <style scoped>
 .content-panel {
-  max-width: 600px;
   position: relative; /* 使详情面板能够覆盖该区域 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 可滚动内容区 */
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+/* 自定义滚动条 */
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 /* 插件中心样式 */

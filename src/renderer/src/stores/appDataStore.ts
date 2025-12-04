@@ -77,6 +77,12 @@ export const useAppDataStore = defineStore('appData', () => {
       // 并行加载历史记录、固定列表和应用列表
       await Promise.all([loadHistoryData(), loadPinnedData(), loadApps()])
 
+      // 监听后端历史记录变化事件
+      window.ztools.onHistoryChanged(() => {
+        console.log('收到历史记录变化通知，重新加载')
+        loadHistoryData()
+      })
+
       isInitialized.value = true
       console.log('应用数据初始化完成')
     } catch (error) {
@@ -501,8 +507,7 @@ export const useAppDataStore = defineStore('appData', () => {
     search,
     reloadUserData,
 
-    // 历史记录方法
-    addToHistory,
+    // 历史记录方法（移除了 addToHistory，由后端处理）
     getRecentApps,
     removeFromHistory,
     clearHistory,

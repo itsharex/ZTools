@@ -69,7 +69,7 @@ function updateWindowHeight(): Promise<void> {
     const container = document.querySelector('.app-container')
     if (container) {
       const height = container.scrollHeight
-      window.ztools.resizeWindow(height)
+      window.ztools.resizeWindow(height + 1)
     }
   })
 }
@@ -278,7 +278,7 @@ onUnmounted(() => {
 
 <style scoped>
 .app-container {
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-color);

@@ -77,6 +77,9 @@ contextBridge.exposeInMainWorld('ztools', {
   onAppLaunched: (callback: () => void) => {
     ipcRenderer.on('app-launched', callback)
   },
+  onHistoryChanged: (callback: () => void) => {
+    ipcRenderer.on('history-changed', callback)
+  },
   onIpcLaunch: (
     callback: (options: {
       path: string
@@ -179,6 +182,7 @@ declare global {
       onShowPluginPlaceholder: (callback: () => void) => void
       onShowSettings: (callback: () => void) => void
       onAppLaunched: (callback: () => void) => void
+      onHistoryChanged: (callback: () => void) => void
       openPluginDevTools: () => Promise<{ success: boolean; error?: string }>
       // 快捷键相关
       updateShortcut: (shortcut: string) => Promise<{ success: boolean; error?: string }>

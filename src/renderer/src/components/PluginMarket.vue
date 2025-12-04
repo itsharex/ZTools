@@ -1,71 +1,74 @@
 <template>
   <div class="plugin-market">
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <span>加载中...</span>
-    </div>
-    <div v-else class="market-grid">
-      <div v-for="plugin in plugins" :key="plugin.name" class="plugin-card">
-        <div class="plugin-icon">
-          <img :src="plugin.logo" class="plugin-logo-img" alt="icon" />
-        </div>
-        <div class="plugin-info">
-          <div class="plugin-name" @click="openPluginDetail(plugin)">{{ plugin.name }}</div>
-          <div class="plugin-description" :title="plugin.description">{{ plugin.description }}</div>
-        </div>
-        <div class="plugin-action">
-          <template v-if="plugin.installed">
+    <!-- 可滚动内容区 -->
+    <div class="scrollable-content">
+      <div v-if="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>加载中...</span>
+      </div>
+      <div v-else class="market-grid">
+        <div v-for="plugin in plugins" :key="plugin.name" class="plugin-card">
+          <div class="plugin-icon">
+            <img :src="plugin.logo" class="plugin-logo-img" alt="icon" />
+          </div>
+          <div class="plugin-info">
+            <div class="plugin-name" @click="openPluginDetail(plugin)">{{ plugin.name }}</div>
+            <div class="plugin-description" :title="plugin.description">{{ plugin.description }}</div>
+          </div>
+          <div class="plugin-action">
+            <template v-if="plugin.installed">
+              <button
+                v-if="canUpgrade(plugin)"
+                class="action-btn upgrade"
+                :disabled="installingPlugin === plugin.name"
+                @click="handleUpgradePlugin(plugin)"
+              >
+                <span v-if="installingPlugin === plugin.name">...</span>
+                <span v-else>升级</span>
+              </button>
+              <button v-else class="action-btn installed" @click="handleOpenPlugin(plugin)">
+                打开
+              </button>
+            </template>
             <button
-              v-if="canUpgrade(plugin)"
-              class="action-btn upgrade"
+              v-else
+              class="action-btn download"
               :disabled="installingPlugin === plugin.name"
-              @click="handleUpgradePlugin(plugin)"
+              @click="downloadPlugin(plugin)"
             >
               <span v-if="installingPlugin === plugin.name">...</span>
-              <span v-else>升级</span>
+              <svg
+                v-else
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7 10L12 15L17 10"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 15V3"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </button>
-            <button v-else class="action-btn installed" @click="handleOpenPlugin(plugin)">
-              打开
-            </button>
-          </template>
-          <button
-            v-else
-            class="action-btn download"
-            :disabled="installingPlugin === plugin.name"
-            @click="downloadPlugin(plugin)"
-          >
-            <span v-if="installingPlugin === plugin.name">...</span>
-            <svg
-              v-else
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M7 10L12 15L17 10"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12 15V3"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -149,17 +152,23 @@ function closePluginDetail(): void {
 
 async function handleOpenPlugin(plugin: Plugin): Promise<void> {
   if (!plugin.path) {
-    console.error('无法打开插件: 路径未知')
+    alert('无法打开插件: 路径未知')
     return
   }
   try {
-    await window.ztools.launch({
+    const result = await window.ztools.launch({
       path: plugin.path,
       type: 'plugin',
       param: {}
     })
-  } catch (error) {
+
+    // 检查返回结果
+    if (result && !result.success) {
+      alert(`无法打开插件: ${result.error || '未知错误'}`)
+    }
+  } catch (error: any) {
     console.error('打开插件失败:', error)
+    alert(`打开插件失败: ${error.message || '未知错误'}`)
   }
 }
 
@@ -215,6 +224,10 @@ async function handleUpgradePlugin(plugin: Plugin): Promise<void> {
       // 更新状态
       plugin.installed = true
       plugin.localVersion = plugin.version
+      // 更新 path，这样可以立即打开插件
+      if (installResult.plugin && installResult.plugin.path) {
+        plugin.path = installResult.plugin.path
+      }
       // 重新获取列表以确保状态同步
       await fetchPlugins()
     } else {
@@ -238,9 +251,13 @@ async function downloadPlugin(plugin: Plugin): Promise<void> {
     const result = await window.ztools.installPluginFromMarket(JSON.parse(JSON.stringify(plugin)))
     if (result.success) {
       console.log('插件安装成功:', plugin.name)
-      // 更新状态
+      // 更新状态，使用后端返回的插件信息
       plugin.installed = true
       plugin.localVersion = plugin.version
+      // 更新 path，这样可以立即打开插件
+      if (result.plugin && result.plugin.path) {
+        plugin.path = result.plugin.path
+      }
       // 重新获取列表以确保状态同步（可选）
       // await fetchPlugins()
     } else {
@@ -262,8 +279,36 @@ onMounted(() => {
 
 <style scoped>
 .plugin-market {
-  /* padding: 20px; */
-  position: relative;
+  position: relative; /* 使详情面板能够覆盖该区域 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 可滚动内容区 */
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+/* 自定义滚动条 */
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .market-grid {

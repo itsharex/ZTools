@@ -8,8 +8,8 @@
 ✅ **同步 + Promise 双模式** - 支持同步和异步两种调用方式  
 ✅ **高性能** - 基于 LMDB，比 PouchDB 更快，内存占用更低  
 ✅ **ACID 事务** - 完整的事务支持，保证数据一致性  
-✅ **版本控制** - 自动管理文档版本（_rev）  
-✅ **附件支持** - 支持存储二进制附件（最大 10M）  
+✅ **版本控制** - 自动管理文档版本（\_rev）  
+✅ **附件支持** - 支持存储二进制附件（最大 10M）
 
 ## 目录结构
 
@@ -29,6 +29,7 @@ lmdb/
 ### 同步 API
 
 #### `put(doc)`
+
 创建或更新文档（同步）
 
 ```typescript
@@ -36,7 +37,7 @@ const doc = { _id: 'test/doc-1', data: 'hello' }
 const result = db.put(doc)
 
 if (result.ok) {
-  doc._rev = result.rev  // 更新版本号
+  doc._rev = result.rev // 更新版本号
   console.log('保存成功')
 } else if (result.error) {
   console.error('保存失败:', result.message)
@@ -44,6 +45,7 @@ if (result.ok) {
 ```
 
 #### `get(id)`
+
 根据 ID 获取文档（同步）
 
 ```typescript
@@ -56,6 +58,7 @@ if (doc) {
 ```
 
 #### `remove(docOrId)`
+
 删除文档（同步）
 
 ```typescript
@@ -71,6 +74,7 @@ if (result.ok) {
 ```
 
 #### `bulkDocs(docs)`
+
 批量创建或更新文档（同步）
 
 ```typescript
@@ -88,6 +92,7 @@ results.forEach((result, index) => {
 ```
 
 #### `allDocs(key?)`
+
 获取文档数组（同步）
 
 ```typescript
@@ -102,6 +107,7 @@ const specificDocs = db.allDocs(['test/doc-2', 'test/doc-3'])
 ```
 
 #### `postAttachment(id, attachment, type)`
+
 存储附件（同步）
 
 ```typescript
@@ -116,6 +122,7 @@ if (result.ok) {
 ```
 
 #### `getAttachment(id)`
+
 获取附件（同步）
 
 ```typescript
@@ -126,11 +133,12 @@ if (buffer) {
 ```
 
 #### `getAttachmentType(id)`
+
 获取附件类型（同步）
 
 ```typescript
 const type = db.getAttachmentType('my-image')
-console.log('附件类型:', type)  // 'image/png'
+console.log('附件类型:', type) // 'image/png'
 ```
 
 ### Promise API
@@ -158,23 +166,25 @@ const imageData = await db.promises.getAttachment('my-image')
 ## 类型定义
 
 ### DbDoc
+
 ```typescript
 interface DbDoc {
-  _id: string       // 文档 ID（必需）
-  _rev?: string     // 文档版本号（更新时必需）
+  _id: string // 文档 ID（必需）
+  _rev?: string // 文档版本号（更新时必需）
   [key: string]: any // 自定义字段
 }
 ```
 
 ### DbResult
+
 ```typescript
 interface DbResult {
-  id: string         // 文档 ID
-  rev?: string       // 新的版本号
-  ok?: boolean       // 操作是否成功
-  error?: boolean    // 是否发生错误
-  name?: string      // 错误名称
-  message?: string   // 错误消息
+  id: string // 文档 ID
+  rev?: string // 新的版本号
+  ok?: boolean // 操作是否成功
+  error?: boolean // 是否发生错误
+  name?: string // 错误名称
+  message?: string // 错误消息
 }
 ```
 
@@ -191,7 +201,7 @@ const result = lmdbInstance.put(doc)
 
 // 读取文档
 const user = lmdbInstance.get('user/123')
-console.log(user)  // { _id: 'user/123', _rev: '1-xxx', name: 'John', age: 30 }
+console.log(user) // { _id: 'user/123', _rev: '1-xxx', name: 'John', age: 30 }
 
 // 更新文档
 user.age = 31
@@ -255,6 +265,7 @@ if (buffer) {
 ## 性能优化建议
 
 ### 1. 使用批量操作
+
 ```typescript
 // ❌ 不推荐：逐个插入
 for (const item of items) {
@@ -262,21 +273,23 @@ for (const item of items) {
 }
 
 // ✅ 推荐：批量插入
-const docs = items.map(item => ({ _id: `item/${item.id}`, ...item }))
+const docs = items.map((item) => ({ _id: `item/${item.id}`, ...item }))
 db.bulkDocs(docs)
 ```
 
 ### 2. 合理使用前缀查询
+
 ```typescript
 // ✅ 高效：使用前缀查询
 const userDocs = db.allDocs('user/')
 
 // ❌ 低效：获取所有文档后过滤
 const allDocs = db.allDocs()
-const userDocs = allDocs.filter(doc => doc._id.startsWith('user/'))
+const userDocs = allDocs.filter((doc) => doc._id.startsWith('user/'))
 ```
 
 ### 3. 控制文档大小
+
 ```typescript
 // 单个文档不超过 1MB
 // 大数据使用附件存储（最大 10MB）
@@ -288,39 +301,42 @@ const userDocs = allDocs.filter(doc => doc._id.startsWith('user/'))
 ⚠️ **附件大小限制**: 单个附件不超过 10MB  
 ⚠️ **版本控制**: 更新文档时必须提供正确的 `_rev`  
 ⚠️ **附件不可更新**: 附件只能创建，不能更新（需要先删除再创建新的）  
-⚠️ **真删除**: 删除操作是永久性的，无法恢复  
+⚠️ **真删除**: 删除操作是永久性的，无法恢复
 
 ## 对比 PouchDB
 
-| 特性 | LMDB | PouchDB |
-|-----|------|---------|
-| 读性能 | ⚡⚡⚡ 极快 | ⚡⚡ 中等 |
-| 写性能 | ⚡⚡⚡ 快 | ⚡⚡ 中等 |
-| 内存占用 | 📉 极低 | 📊 较高 |
-| ACID 事务 | ✅ 完整 | ⚡ 有限 |
-| 云同步 | ❌ 不支持 | ✅ 支持 |
-| 复杂查询 | ❌ 不支持 | ✅ 支持 |
+| 特性      | LMDB        | PouchDB   |
+| --------- | ----------- | --------- |
+| 读性能    | ⚡⚡⚡ 极快 | ⚡⚡ 中等 |
+| 写性能    | ⚡⚡⚡ 快   | ⚡⚡ 中等 |
+| 内存占用  | 📉 极低     | 📊 较高   |
+| ACID 事务 | ✅ 完整     | ⚡ 有限   |
+| 云同步    | ❌ 不支持   | ✅ 支持   |
+| 复杂查询  | ❌ 不支持   | ✅ 支持   |
 
 ## 常见问题
 
 ### Q: 如何迁移 PouchDB 数据到 LMDB？
+
 ```typescript
 // 导出 PouchDB 数据
 const pouchDocs = await pouchDB.allDocs({ include_docs: true })
 
 // 导入到 LMDB
-const docs = pouchDocs.rows.map(row => row.doc)
+const docs = pouchDocs.rows.map((row) => row.doc)
 lmdbInstance.bulkDocs(docs)
 ```
 
 ### Q: 如何备份数据？
+
 LMDB 数据存储在 `userData/lmdb` 目录下，直接复制该目录即可。
 
 ### Q: 数据库文件太大怎么办？
+
 ```typescript
 // 定期清理不需要的数据
 const oldDocs = lmdbInstance.allDocs('cache/')
-oldDocs.forEach(doc => lmdbInstance.remove(doc._id))
+oldDocs.forEach((doc) => lmdbInstance.remove(doc._id))
 ```
 
 ## 许可证

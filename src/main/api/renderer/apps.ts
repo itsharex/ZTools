@@ -5,8 +5,9 @@ import { promisify } from 'util'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { app } from 'electron'
-import { scanApplications } from '../../appScanner.js'
-import { launchApp } from '../../appLauncher.js'
+import { scanApplications } from '../../core/appScanner'
+import { launchApp } from '../../core/appLauncher'
+import databaseAPI from '../shared/database'
 
 const execAsync = promisify(exec)
 
@@ -33,7 +34,7 @@ export class AppsAPI {
 
   private setupIPC(): void {
     ipcMain.handle('get-apps', () => this.getApps())
-    ipcMain.handle('launch', (_event, path: string, param: any) => this.launch(path, param))
+    ipcMain.handle('launch', (_event, options: any) => this.launch(options))
   }
 
   /**
@@ -72,11 +73,25 @@ export class AppsAPI {
   }
 
   /**
-   * 将 ICNS 图标转换为 PNG 并缓存
+   * 将图标转换为 PNG 并缓存（平台自适应）
    */
   private async iconToCachedPath(iconPath: string): Promise<string | null> {
     try {
-      // 生成图标路径的 hash 作为缓存文件名
+      // Windows: 图标已经是 PNG，直接返回 file:/// 路径
+      if (process.platform === 'win32') {
+        // Windows 扫描器已经生成了 PNG 图标，直接使用
+        if (iconPath.endsWith('.png')) {
+          return `file:///${iconPath}`
+        }
+        // 如果不是 PNG（意外情况），尝试复制到缓存目录
+        const hash = createHash('md5').update(iconPath).digest('hex')
+        const cachedFile = path.join(ICON_CACHE_DIR, `${hash}.png`)
+        await fs.mkdir(ICON_CACHE_DIR, { recursive: true })
+        await fs.copyFile(iconPath, cachedFile)
+        return `file:///${cachedFile}`
+      }
+
+      // macOS: 将 ICNS 转换为 PNG
       const hash = createHash('md5').update(iconPath).digest('hex')
       const cachedFile = path.join(ICON_CACHE_DIR, `${hash}.png`)
 
@@ -114,16 +129,30 @@ export class AppsAPI {
     featureCode?: string
     param?: any
   }): Promise<any> {
-    const { path, type, featureCode, param } = options
+    const { path, type, param } = options
+    let { featureCode } = options
     this.launchParam = param || {}
 
     try {
       // 判断是插件还是应用
       if (type === 'plugin') {
+        // 如果没有传 featureCode，自动查找第一个非匹配 feature
+        if (!featureCode) {
+          const result = await this.getDefaultFeatureCode(path)
+          if (!result.success) {
+            // 返回错误给前端
+            return { success: false, error: result.error }
+          }
+          featureCode = result.featureCode
+        }
+
         // 插件启动参数中添加 featureCode
         this.launchParam.code = featureCode || ''
 
         console.log('启动插件:', { path, featureCode })
+
+        // 添加到历史记录
+        await this.addToHistory({ path, type, featureCode, param })
 
         // 通知渲染进程准备显示插件占位区域
         this.mainWindow?.webContents.send('show-plugin-placeholder')
@@ -131,16 +160,208 @@ export class AppsAPI {
         if (this.pluginManager) {
           this.pluginManager.createPluginView(path, featureCode || '')
         }
+
+        return { success: true }
       } else {
         // 普通应用
         await launchApp(path)
+
+        // 添加到历史记录
+        await this.addToHistory({ path, type: 'app' })
+
         // 通知渲染进程应用已启动（清空搜索框等）
         this.mainWindow?.webContents.send('app-launched')
         this.mainWindow?.hide()
+        return { success: true }
       }
     } catch (error) {
       console.error('启动失败:', error)
       throw error
+    }
+  }
+
+  /**
+   * 添加到历史记录
+   */
+  private async addToHistory(options: {
+    path: string
+    type?: 'app' | 'plugin'
+    featureCode?: string
+    param?: any
+  }): Promise<void> {
+    try {
+      const { path: appPath, type = 'app', featureCode, param } = options
+      const now = Date.now()
+
+      // 获取应用/插件信息
+      let appInfo: any = null
+
+      if (type === 'plugin') {
+        // 从插件列表中查找
+        const plugins = (await this.pluginManager?.getRunningPluginsInfo()) || []
+        const dbPlugins = await this.getPluginsFromDB()
+
+        // 先从运行中的插件查找
+        let plugin = plugins.find((p: any) => p.path === appPath)
+        if (!plugin) {
+          // 从数据库查找
+          plugin = dbPlugins.find((p: any) => p.path === appPath)
+        }
+
+        if (plugin) {
+          // 读取插件配置获取完整信息
+          const pluginJsonPath = path.join(appPath, 'plugin.json')
+          try {
+            const pluginConfig = JSON.parse(await fs.readFile(pluginJsonPath, 'utf-8'))
+
+            // 查找对应的 feature
+            const feature = pluginConfig.features?.find((f: any) => f.code === featureCode)
+
+            appInfo = {
+              name: pluginConfig.name,
+              path: appPath,
+              icon: plugin.logo || '',
+              type: 'plugin',
+              featureCode: featureCode,
+              pluginExplain: feature?.explain || ''
+            }
+          } catch (error) {
+            console.error('读取插件配置失败:', error)
+            return
+          }
+        }
+      } else {
+        // 从系统应用列表中查找
+        const apps = await this.getApps()
+        const app = apps.find((a: any) => a.path === appPath)
+
+        if (app) {
+          appInfo = {
+            name: app.name,
+            path: app.path,
+            icon: app.icon,
+            pinyin: app.pinyin,
+            pinyinAbbr: app.pinyinAbbr,
+            type: 'app'
+          }
+        }
+      }
+
+      if (!appInfo) {
+        console.warn('未找到应用信息，跳过添加历史记录:', appPath)
+        return
+      }
+
+      // 读取历史记录
+      let history: any[] = (await databaseAPI.dbGet('app-history')) || []
+
+      // 查找是否已存在
+      const existingIndex = history.findIndex((item) => {
+        if (item.type === 'plugin' && type === 'plugin') {
+          return item.path === appPath && item.featureCode === featureCode
+        }
+        return item.path === appPath
+      })
+
+      if (existingIndex >= 0) {
+        // 已存在，更新使用时间和次数
+        history[existingIndex].lastUsed = now
+        history[existingIndex].useCount = (history[existingIndex].useCount || 0) + 1
+        // 更新可能变化的信息
+        history[existingIndex].name = appInfo.name
+        history[existingIndex].icon = appInfo.icon
+      } else {
+        // 新记录
+        history.push({
+          ...appInfo,
+          lastUsed: now,
+          useCount: 1
+        })
+      }
+
+      // 按最近使用时间排序
+      history.sort((a, b) => b.lastUsed - a.lastUsed)
+
+      // 限制历史记录数量（最多 27 个）
+      if (history.length > 27) {
+        history = history.slice(0, 27)
+      }
+
+      // 保存历史记录
+      await databaseAPI.dbPut('app-history', history)
+
+      console.log('历史记录已更新:', appInfo.name)
+
+      // 通知前端重新加载历史记录
+      this.mainWindow?.webContents.send('history-changed')
+    } catch (error) {
+      console.error('添加历史记录失败:', error)
+    }
+  }
+
+  /**
+   * 从数据库获取插件列表
+   */
+  private async getPluginsFromDB(): Promise<any[]> {
+    try {
+      const plugins = await databaseAPI.dbGet('plugins')
+      return plugins || []
+    } catch (error) {
+      console.error('从数据库获取插件列表失败:', error)
+      return []
+    }
+  }
+
+  /**
+   * 获取插件的默认 featureCode（第一个非匹配 feature）
+   */
+  private async getDefaultFeatureCode(
+    pluginPath: string
+  ): Promise<{ success: boolean; featureCode?: string; error?: string }> {
+    try {
+      const pluginJsonPath = path.join(pluginPath, 'plugin.json')
+      const pluginConfig = JSON.parse(await fs.readFile(pluginJsonPath, 'utf-8'))
+
+      if (!pluginConfig.features || pluginConfig.features.length === 0) {
+        return {
+          success: false,
+          error: '该插件没有配置任何功能'
+        }
+      }
+
+      // 查找第一个非匹配 feature
+      for (const feature of pluginConfig.features) {
+        if (!feature.cmds || feature.cmds.length === 0) {
+          // 没有 cmds 的 feature，使用它
+          return { success: true, featureCode: feature.code }
+        }
+
+        // 检查是否有非匹配型命令
+        const hasNonMatchCmd = feature.cmds.some((cmd: any) => {
+          // 如果是字符串，就是文本命令（非匹配）
+          if (typeof cmd === 'string') return true
+          // 如果是对象但没有 type 字段，也算非匹配
+          if (typeof cmd === 'object' && !cmd.type) return true
+          // 否则是匹配型命令（regex 或 over）
+          return false
+        })
+
+        if (hasNonMatchCmd) {
+          return { success: true, featureCode: feature.code }
+        }
+      }
+
+      // 如果都是匹配型 feature，返回错误
+      return {
+        success: false,
+        error: '该插件所有功能都需要通过指令触发，无法直接打开'
+      }
+    } catch (error) {
+      console.error('读取插件配置失败:', error)
+      return {
+        success: false,
+        error: '读取插件配置失败'
+      }
     }
   }
 }

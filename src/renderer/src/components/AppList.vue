@@ -142,7 +142,6 @@ function onIconError(event: Event, app: App): void {
   color: var(--text-color);
   text-align: center;
   width: 100%; /* 占满父容器宽度 */
-  line-height: 1.4;
   padding: 0 4px; /* 左右留一点边距 */
 
   /* 多行文本省略 */

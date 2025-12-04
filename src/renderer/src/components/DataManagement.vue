@@ -221,6 +221,27 @@ onMounted(() => {
 <style scoped>
 .data-management {
   padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 自定义滚动条 */
+.data-management::-webkit-scrollbar {
+  width: 6px;
+}
+
+.data-management::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.data-management::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.data-management::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .title {
