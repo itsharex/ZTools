@@ -12,6 +12,7 @@ import trayIcon from '../../resources/trayTemplate@2x.png?asset'
 class WindowManager {
   private mainWindow: BrowserWindow | null = null
   private tray: Tray | null = null
+  private trayMenu: Menu | null = null // 托盘菜单
   private currentShortcut = 'Option+Z' // 当前注册的快捷键
   private isQuitting = false // 是否正在退出应用
   private previousActiveWindow: {
@@ -159,9 +160,16 @@ class WindowManager {
     // 创建右键菜单
     this.createTrayMenu()
 
-    // macOS：点击托盘图标切换窗口显示
+    // 左键点击：切换窗口显示
     this.tray.on('click', () => {
-      // this.toggleWindow()
+      this.toggleWindow()
+    })
+
+    // 右键点击：显示菜单
+    this.tray.on('right-click', () => {
+      if (this.tray && this.trayMenu) {
+        this.tray.popUpContextMenu(this.trayMenu)
+      }
     })
   }
 
@@ -171,7 +179,7 @@ class WindowManager {
   private createTrayMenu(): void {
     if (!this.tray) return
 
-    const contextMenu = Menu.buildFromTemplate([
+    this.trayMenu = Menu.buildFromTemplate([
       {
         label: '显示/隐藏',
         click: () => {
@@ -206,7 +214,6 @@ class WindowManager {
       }
     ])
 
-    this.tray.setContextMenu(contextMenu)
   }
 
   /**
@@ -365,6 +372,7 @@ class WindowManager {
       if (this.tray) {
         this.tray.destroy()
         this.tray = null
+        this.trayMenu = null
       }
     }
   }
