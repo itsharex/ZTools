@@ -315,7 +315,6 @@ export const useAppDataStore = defineStore('appData', () => {
         const isWindows = await window.ztools.isWindows()
         if (isWindows) {
           const settings = await window.ztools.getSystemSettings()
-          console.log('系统设置图标路径示例:', settings[0]?.icon)
           settingCommands = settings.map((s: any) => ({
             name: s.name,
             path: s.uri,
@@ -374,7 +373,6 @@ export const useAppDataStore = defineStore('appData', () => {
 
     // 1. Fuse.js 模糊搜索
     const fuseResults = fuse.value.search(query)
-    console.log('fuseResults', fuseResults)
     const bestMatches = fuseResults.map((r) => ({
       ...r.item,
       matches: r.matches as MatchInfo[]
@@ -460,12 +458,26 @@ export const useAppDataStore = defineStore('appData', () => {
     }
   }
 
-  // 获取最近使用的应用
+  // 获取最近使用的应用（自动同步最新的应用数据）
   function getRecentApps(limit?: number): Command[] {
+    // 同步历史记录中的应用数据，确保使用最新的路径和图标
+    const syncedHistory = history.value.map((historyItem) => {
+      // 尝试从当前应用列表中找到同名应用
+      const currentApp = apps.value.find((app) => 
+        app.name === historyItem.name && 
+        app.type === historyItem.type &&
+        app.subType === historyItem.subType &&
+        app.featureCode === historyItem.featureCode
+      )
+      
+      // 如果找到了最新的应用数据，使用最新的；否则使用历史记录
+      return currentApp || historyItem
+    })
+    
     if (limit) {
-      return history.value.slice(0, limit)
+      return syncedHistory.slice(0, limit)
     }
-    return history.value
+    return syncedHistory
   }
 
   // 从历史记录中删除指定应用
@@ -525,9 +537,21 @@ export const useAppDataStore = defineStore('appData', () => {
     // 后端会发送 pinned-changed 事件，触发重新加载
   }
 
-  // 获取固定列表
+  // 获取固定列表（自动同步最新的应用数据）
   function getPinnedApps(): Command[] {
-    return pinnedApps.value
+    // 同步固定应用的数据，确保使用最新的路径和图标
+    return pinnedApps.value.map((pinnedItem) => {
+      // 尝试从当前应用列表中找到同名应用
+      const currentApp = apps.value.find((app) => 
+        app.name === pinnedItem.name && 
+        app.type === pinnedItem.type &&
+        app.subType === pinnedItem.subType &&
+        app.featureCode === pinnedItem.featureCode
+      )
+      
+      // 如果找到了最新的应用数据，使用最新的；否则使用固定列表中的
+      return currentApp || pinnedItem
+    })
   }
 
   // 更新固定列表顺序

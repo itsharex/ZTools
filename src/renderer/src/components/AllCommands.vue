@@ -92,13 +92,19 @@
             class="card command-card"
           >
             <div class="command-icon">
+              <!-- Emoji 图标 -->
+              <span v-if="cmd.icon && cmd.icon.length <= 2" class="icon-emoji">{{ cmd.icon }}</span>
+              <!-- 图片图标 -->
               <img 
-                v-if="cmd.icon && !cmd.icon.match(/^[^\w]/)" 
+                v-else-if="cmd.icon && !hasIconError(cmd)" 
                 :src="cmd.icon"
                 :class="{ 'system-setting-icon': cmd.subType === 'system-setting' }"
-                @error="() => console.error('图标加载失败:', cmd.name, cmd.icon)"
+                @error="() => onIconError(cmd)"
               />
-              <span v-else class="icon-emoji">{{ cmd.icon || '📄' }}</span>
+              <!-- Fallback 图标 -->
+              <div v-else class="icon-placeholder">
+                {{ cmd.name.charAt(0).toUpperCase() }}
+              </div>
             </div>
             <div class="command-details">
               <div class="command-title">{{ cmd.name }}</div>
@@ -135,8 +141,18 @@
             class="card command-card"
           >
             <div class="command-icon">
-              <img v-if="cmd.icon && !cmd.icon.match(/^[^\w]/)" :src="cmd.icon" />
-              <span v-else class="icon-emoji">{{ cmd.icon || '🔍' }}</span>
+              <!-- Emoji 图标 -->
+              <span v-if="cmd.icon && cmd.icon.length <= 2" class="icon-emoji">{{ cmd.icon }}</span>
+              <!-- 图片图标 -->
+              <img 
+                v-else-if="cmd.icon && !hasIconError(cmd)" 
+                :src="cmd.icon"
+                @error="() => onIconError(cmd)"
+              />
+              <!-- Fallback 图标 -->
+              <div v-else class="icon-placeholder">
+                {{ cmd.name.charAt(0).toUpperCase() }}
+              </div>
             </div>
             <div class="command-details">
               <div class="command-title">{{ cmd.name }}</div>
@@ -179,6 +195,9 @@ interface Source {
 const plugins = ref<any[]>([])
 const selectedSource = ref<Source | null>(null)
 const activeTab = ref<'text' | 'match'>('text')
+
+// 记录图标加载失败的指令
+const iconErrors = ref<Set<string>>(new Set())
 
 // 所有指令
 const allCommands = computed(() => appDataStore.apps)
@@ -240,6 +259,19 @@ const matchCommands = computed(() => {
 const hasCommands = computed(() => 
   textCommands.value.length > 0 || matchCommands.value.length > 0
 )
+
+// 图标加载失败处理
+function onIconError(cmd: any): void {
+  const key = `${cmd.path}-${cmd.featureCode || ''}-${cmd.name}`
+  iconErrors.value.add(key)
+  console.warn('图标加载失败:', cmd.name)
+}
+
+// 检查图标是否加载失败
+function hasIconError(cmd: any): boolean {
+  const key = `${cmd.path}-${cmd.featureCode || ''}-${cmd.name}`
+  return iconErrors.value.has(key)
+}
 
 // 获取插件指令数量（排除插件名本身）
 function getPluginCommandCount(plugin: any): number {
@@ -530,6 +562,19 @@ onMounted(async () => {
 
 .icon-emoji {
   font-size: 24px;
+}
+
+.icon-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .command-details {

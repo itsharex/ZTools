@@ -101,7 +101,6 @@ async function extractIcon(appPath: string, appName: string): Promise<string> {
 // 递归扫描目录中的快捷方式
 async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
   try {
-    console.log(`正在扫描目录: ${dirPath}`)
     const entries = await fsPromises.readdir(dirPath, { withFileTypes: true })
 
     for (const entry of entries) {
@@ -111,7 +110,6 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       if (entry.isDirectory()) {
         // 跳过 SDK、示例、文档等开发相关文件夹
         if (SKIP_FOLDERS.includes(entry.name.toLowerCase())) {
-          console.log(`跳过开发文件夹: ${entry.name}`)
           continue
         }
         // 递归扫描子目录
@@ -126,11 +124,9 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
 
       // 处理快捷方式
       const appName = path.basename(entry.name, '.lnk')
-      console.log(`处理快捷方式: ${entry.name}`)
 
       // 快速过滤：检查名称关键词（卸载程序、帮助文档等）
       if (shouldSkipShortcut(appName)) {
-        console.log(`  跳过快捷方式: ${appName}`)
         continue
       }
 
@@ -138,25 +134,36 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       let shortcutDetails: Electron.ShortcutDetails | null = null
       try {
         shortcutDetails = shell.readShortcutLink(fullPath)
-        console.log(`  ${appName} -> target: ${shortcutDetails.target || '(空)'}`)
       } catch (error: any) {
-        console.log(`  解析快捷方式失败: ${entry.name}, 错误: ${error.message}`)
+        // 解析失败，使用快捷方式本身
       }
 
       // 获取目标路径和应用路径
       const targetPath = shortcutDetails?.target?.trim() || ''
-      const appPath = targetPath || fullPath // 如果没有目标，使用 .lnk 文件本身
+      // 如果目标路径存在且文件存在，使用目标路径；否则使用 .lnk 文件本身
+      let appPath = fullPath
+      let iconPath = fullPath // 图标提取路径，默认为快捷方式
+      
+      if (targetPath) {
+        const fs = await import('fs')
+        if (fs.existsSync(targetPath)) {
+          appPath = targetPath
+          iconPath = targetPath // 目标存在时，从目标提取图标
+        } else {
+          // 目标不存在时，尝试从快捷方式的图标路径提取
+          iconPath = shortcutDetails?.icon || fullPath
+        }
+      }
 
       // 二次过滤：检查目标文件扩展名
       if (shouldSkipShortcut(appName, targetPath)) {
-        console.log(`  跳过文档/网页: ${appName} -> ${path.extname(targetPath)}`)
         continue
       }
 
       // 提取图标
       let icon = ''
       try {
-        icon = await extractIcon(appPath, appName)
+        icon = await extractIcon(iconPath, appName)
       } catch (error) {
         console.error(`提取图标失败 ${appName}:`, error)
       }
@@ -169,7 +176,6 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       }
 
       apps.push(app)
-      console.log(`  ✓ 添加应用: ${appName}`)
     }
   } catch (error) {
     console.error(`扫描目录失败 ${dirPath}:`, error)
@@ -178,7 +184,7 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
 
 export async function scanApplications(): Promise<Command[]> {
   try {
-    console.time('扫描应用')
+    const startTime = performance.now()
 
     // 确保图标目录存在
     await ensureIconDir()
@@ -198,8 +204,8 @@ export async function scanApplications(): Promise<Command[]> {
     // 扫描用户级开始菜单
     await scanDirectory(userStartMenu, apps)
 
-    console.timeEnd('扫描应用')
-    console.log(`成功加载 ${apps.length} 个应用`)
+    const endTime = performance.now()
+    console.log(`扫描完成: ${apps.length} 个应用, 耗时 ${(endTime - startTime).toFixed(0)}ms`)
 
     return apps
   } catch (error) {

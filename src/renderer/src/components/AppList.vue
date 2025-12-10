@@ -26,12 +26,12 @@
           </div>
           <!-- 图片图标 (base64) -->
           <img
-            v-else-if="app.icon"
+            v-else-if="app.icon && !hasIconError(app)"
             :src="app.icon"
             :class="['app-icon', { 'system-setting-icon': app.subType === 'system-setting' }]"
             @error="(e) => onIconError(e, app)"
           />
-          <!-- 占位图标 -->
+          <!-- 占位图标（无图标或加载失败时显示） -->
           <div v-else class="app-icon-placeholder">
             {{ app.name.charAt(0).toUpperCase() }}
           </div>
@@ -43,7 +43,7 @@
     <div v-if="!props.draggable" class="app-grid">
       <div
         v-for="(app, index) in apps"
-        :key="app.path"
+        :key="`${app.path}-${app.featureCode || ''}-${app.name}`"
         :ref="(el) => setItemRef(el, index)"
         class="app-item"
         :class="{ selected: index === selectedIndex }"
@@ -57,12 +57,12 @@
         </div>
         <!-- 图片图标 (base64) -->
         <img
-          v-else-if="app.icon"
+          v-else-if="app.icon && !hasIconError(app)"
           :src="app.icon"
           :class="['app-icon', { 'system-setting-icon': app.subType === 'system-setting' }]"
           @error="(e) => onIconError(e, app)"
         />
-        <!-- 占位图标 -->
+        <!-- 占位图标（无图标或加载失败时显示） -->
         <div v-else class="app-icon-placeholder">
           {{ app.name.charAt(0).toUpperCase() }}
         </div>
@@ -164,10 +164,20 @@ function getHighlightedName(app: Command): string {
   return highlightMatch(app.name, app.matches)
 }
 
-function onIconError(event: Event, app: Command): void {
-  // 图标加载失败,隐藏图标
-  ;(event.target as HTMLImageElement).style.display = 'none'
+// 记录图标加载失败的应用
+const iconErrors = ref<Set<string>>(new Set())
+
+function onIconError(_event: Event, app: Command): void {
+  // 图标加载失败，标记该应用
+  const key = `${app.path}-${app.featureCode || ''}-${app.name}`
+  iconErrors.value.add(key)
   console.warn(`无法加载图标: ${app.name}`)
+}
+
+// 检查图标是否加载失败
+function hasIconError(app: Command): boolean {
+  const key = `${app.path}-${app.featureCode || ''}-${app.name}`
+  return iconErrors.value.has(key)
 }
 
 // 暴露方法供父组件调用

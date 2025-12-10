@@ -75,15 +75,18 @@ const isExpanded = computed({
 
 // 可见的应用列表
 const visibleApps = computed(() => {
+  let result
   if (!canExpand.value) {
     // 不可展开时，显示所有项目
-    return props.apps
+    result = props.apps
+  } else if (isExpanded.value) {
+    result = props.apps
+  } else {
+    // 折叠时显示默认行数的项目
+    result = props.apps.slice(0, defaultVisibleCount.value)
   }
-  if (isExpanded.value) {
-    return props.apps
-  }
-  // 折叠时显示默认行数的项目
-  return props.apps.slice(0, defaultVisibleCount.value)
+  
+  return result
 })
 
 // 切换展开/收起

@@ -227,27 +227,37 @@ function arrayToGrid(arr: any[], cols = 9): any[][] {
 }
 
 // 可见的应用和插件结果（用于键盘导航）
+// 注意：CollapsibleList 内部会根据展开状态自动处理显示数量，这里我们需要同步
 const visibleAppAndPluginResults = computed(() => {
-  if (isSearchResultsExpanded.value) {
-    return appAndPluginResults.value
+  const defaultVisibleCount = 9 * 2 // itemsPerRow * defaultVisibleRows
+  const canExpand = appAndPluginResults.value.length > defaultVisibleCount
+  
+  let result
+  if (!canExpand || isSearchResultsExpanded.value) {
+    result = appAndPluginResults.value
+  } else {
+    result = appAndPluginResults.value.slice(0, defaultVisibleCount)
   }
-  return appAndPluginResults.value.slice(0, 18) // 默认显示2行（18个）
+  
+  return result
 })
 
 // 可见的系统设置结果（用于键盘导航）
 const visibleSystemSettingResults = computed(() => {
-  if (isSystemSettingsExpanded.value) {
+  const defaultVisibleCount = 9 * 2
+  if (isSystemSettingsExpanded.value || systemSettingResults.value.length <= defaultVisibleCount) {
     return systemSettingResults.value
   }
-  return systemSettingResults.value.slice(0, 18) // 默认显示2行（18个）
+  return systemSettingResults.value.slice(0, defaultVisibleCount)
 })
 
 // 可见的推荐列表（用于键盘导航）
 const visibleRecommendations = computed(() => {
-  if (isRecommendationsExpanded.value) {
+  const defaultVisibleCount = 9 * 2
+  if (isRecommendationsExpanded.value || recommendations.value.length <= defaultVisibleCount) {
     return recommendations.value
   }
-  return recommendations.value.slice(0, 18) // 默认显示2行（18个）
+  return recommendations.value.slice(0, defaultVisibleCount)
 })
 
 // 构建导航网格
