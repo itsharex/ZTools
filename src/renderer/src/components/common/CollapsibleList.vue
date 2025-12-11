@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Command } from '../../stores/commandDataStore'
-import AppList from '../AppList.vue'
+import AppList from '../search/AppList.vue'
 
 interface Props {
   title: string // 标题

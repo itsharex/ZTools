@@ -3,6 +3,7 @@ import fs from 'fs'
 import fsPromises from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import { getWindowsStartMenuPaths } from '../../utils/systemPaths'
 import { Command } from './types'
 
 // ========== 配置 ==========
@@ -135,7 +136,7 @@ async function scanDirectory(dirPath: string, apps: Command[]): Promise<void> {
       let shortcutDetails: Electron.ShortcutDetails | null = null
       try {
         shortcutDetails = shell.readShortcutLink(fullPath)
-      } catch (error: any) {
+      } catch {
         // 解析失败，使用快捷方式本身
       }
 
@@ -192,18 +193,13 @@ export async function scanApplications(): Promise<Command[]> {
 
     const apps: Command[] = []
 
-    // Windows 开始菜单路径
-    const programDataStartMenu = 'C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs'
-    const userStartMenu = path.join(
-      os.homedir(),
-      'AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs'
-    )
+    // 获取 Windows 开始菜单路径
+    const startMenuPaths = getWindowsStartMenuPaths()
 
-    // 扫描系统级开始菜单
-    await scanDirectory(programDataStartMenu, apps)
-
-    // 扫描用户级开始菜单
-    await scanDirectory(userStartMenu, apps)
+    // 扫描所有开始菜单目录
+    for (const menuPath of startMenuPaths) {
+      await scanDirectory(menuPath, apps)
+    }
 
     const endTime = performance.now()
     console.log(`扫描完成: ${apps.length} 个应用, 耗时 ${(endTime - startTime).toFixed(0)}ms`)

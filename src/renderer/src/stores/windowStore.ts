@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import defaultAvattar from '../asserts/image/default.png'
+import defaultAvatar from '../assets/image/default.png'
 
 interface WindowInfo {
   appName: string
@@ -16,7 +16,7 @@ interface PluginInfo {
 }
 
 const DEFAULT_PLACEHOLDER = '搜索应用或输入命令'
-const DEFAULT_AVATAR = defaultAvattar
+const DEFAULT_AVATAR = defaultAvatar
 
 // 自动粘贴选项
 export type AutoPasteOption = 'off' | '1s' | '3s' | '5s' | '10s'
@@ -320,6 +320,7 @@ export const useWindowStore = defineStore('window', () => {
         if (data.placeholder) {
           placeholder.value = data.placeholder
         }
+        // 只有自定义头像才从数据库加载，没有则使用打包的默认头像
         if (data.avatar) {
           avatar.value = data.avatar
         }

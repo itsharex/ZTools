@@ -252,7 +252,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useWindowStore } from '../stores/windowStore'
+import { useWindowStore } from '../../stores/windowStore'
 
 const windowStore = useWindowStore()
 
@@ -291,7 +291,7 @@ const themeColors = [
 const customColor = ref('#db2777')
 
 // 头像默认值（用于重置）
-const defaultAvatar = new URL('../asserts/image/default.png', import.meta.url).href
+const defaultAvatar = new URL('../../assets/image/default.png', import.meta.url).href
 
 // 显示的快捷键文本
 const displayHotkey = computed(() => {
@@ -657,11 +657,14 @@ async function loadSettings(): Promise<void> {
 // 保存设置
 async function saveSettings(): Promise<void> {
   try {
+    // 只有自定义头像才保存到数据库，默认头像不保存
+    const avatarToSave = windowStore.avatar === defaultAvatar ? undefined : windowStore.avatar
+
     await window.ztools.dbPut('settings-general', {
       opacity: opacity.value,
       hotkey: hotkey.value,
       placeholder: windowStore.placeholder,
-      avatar: windowStore.avatar,
+      avatar: avatarToSave,
       autoPaste: windowStore.autoPaste,
       hideOnBlur: windowStore.hideOnBlur,
       theme: windowStore.theme,
@@ -687,25 +690,7 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
-  background: var(--card-bg);
-}
-
-/* 自定义滚动条 */
-.content-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.content-panel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.content-panel::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.content-panel::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--bg-color);
 }
 
 /* 设置项 */

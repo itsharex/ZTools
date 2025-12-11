@@ -86,9 +86,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useCommandDataStore } from '../stores/commandDataStore'
-import { useWindowStore } from '../stores/windowStore'
-import CollapsibleList from './common/CollapsibleList.vue'
+import { useCommandDataStore } from '../../stores/commandDataStore'
+import { useWindowStore } from '../../stores/windowStore'
+import CollapsibleList from '../common/CollapsibleList.vue'
 
 interface Props {
   searchQuery: string
@@ -736,38 +736,6 @@ defineExpose({
   max-height: 541px; /* 600 - 59 (搜索框高度) */
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-/* 自定义滚动条 */
-.scrollable-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scrollable-content::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px 0; /* 上下留出间距 */
-}
-
-.scrollable-content::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-  transition: background 0.2s ease;
-  /* 添加一点内边距效果 */
-  background-clip: padding-box;
-  border: 2px solid transparent;
-}
-
-.scrollable-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-  background-clip: padding-box;
-  border: 2px solid transparent;
-}
-
-/* 滚动时的样式 */
-.scrollable-content::-webkit-scrollbar-thumb:active {
-  background: var(--text-color);
-  background-clip: padding-box;
-  border: 1px solid transparent;
 }
 
 .content-section {

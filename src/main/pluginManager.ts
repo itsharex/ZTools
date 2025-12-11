@@ -680,7 +680,7 @@ class PluginManager {
 
       console.log('插件已分离到独立窗口:', pluginConfig.name)
       return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('分离插件失败:', error)
       return { success: false, error: error.message || '未知错误' }
     }

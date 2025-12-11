@@ -443,6 +443,20 @@ body {
   cursor: pointer;
 }
 
+/* 全局滚动条样式优化 */
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 3px !important;
+}
+
 /* 全局滚动条样式优化 - 亮色模式 */
 @media (prefers-color-scheme: light) {
   ::-webkit-scrollbar-thumb {

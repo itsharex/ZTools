@@ -176,7 +176,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useCommandDataStore } from '../stores/commandDataStore'
+import { useCommandDataStore } from '../../stores/commandDataStore'
 
 const appDataStore = useCommandDataStore()
 
@@ -386,13 +386,13 @@ onMounted(async () => {
   border-right: 1px solid var(--divider-color);
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
+  background: var(--bg-color);
 }
 
 .panel-header {
   padding: 16px 20px;
   border-bottom: 1px solid var(--divider-color);
-  background: var(--card-bg);
+  background: var(--bg-color);
   height: 56px;
   display: flex;
   align-items: center;
@@ -410,24 +410,6 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-}
-
-/* 自定义滚动条 */
-.sources-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sources-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sources-list::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.sources-list::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
 }
 
 .source-item {
@@ -514,7 +496,7 @@ onMounted(async () => {
   justify-content: center;
   padding: 16px 20px;
   border-bottom: 1px solid var(--divider-color);
-  background: var(--card-bg);
+  background: var(--bg-color);
   height: 56px;
   box-sizing: border-box;
 }
@@ -573,23 +555,6 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px;
-}
-
-.commands-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.commands-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.commands-content::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.commands-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
 }
 
 .command-list {

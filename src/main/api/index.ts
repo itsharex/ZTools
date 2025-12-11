@@ -49,7 +49,7 @@ class APIManager {
     windowAPI.init(mainWindow)
     settingsAPI.init(mainWindow)
     systemAPI.init(mainWindow)
-    systemSettingsAPI.init(mainWindow)
+    systemSettingsAPI.init()
 
     // 初始化插件API
     pluginLifecycleAPI.init(mainWindow, pluginManager)
@@ -94,7 +94,7 @@ class APIManager {
           }
         }
         return { success: false, error: '功能不可用' }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('打开开发者工具失败:', error)
         return { success: false, error: error.message || '未知错误' }
       }
@@ -108,7 +108,7 @@ class APIManager {
           return result
         }
         return { success: false, error: '功能不可用' }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('分离插件失败:', error)
         return { success: false, error: error.message || '未知错误' }
       }

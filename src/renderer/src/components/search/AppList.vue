@@ -35,6 +35,7 @@
           <div v-else class="app-icon-placeholder">
             {{ app.name.charAt(0).toUpperCase() }}
           </div>
+          <!-- eslint-disable-next-line vue/no-v-html -->
           <span class="app-name" v-html="getHighlightedName(app)"></span>
         </div>
       </template>
@@ -66,6 +67,7 @@
         <div v-else class="app-icon-placeholder">
           {{ app.name.charAt(0).toUpperCase() }}
         </div>
+        <!-- eslint-disable-next-line vue/no-v-html -->
         <span class="app-name" v-html="getHighlightedName(app)"></span>
       </div>
     </div>
@@ -78,8 +80,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue'
 import Draggable from 'vuedraggable'
-import type { Command } from '../stores/commandDataStore'
-import { highlightMatch } from '../utils/highlight'
+import type { Command } from '../../stores/commandDataStore'
+import { highlightMatch } from '../../utils/highlight'
 
 const props = withDefaults(
   defineProps<{
@@ -312,36 +314,6 @@ defineExpose({
   text-align: center;
   color: var(--text-secondary);
   font-size: 14px;
-}
-
-/* 自定义滚动条 */
-.app-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.app-list::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px 0;
-}
-
-.app-list::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-  transition: background 0.2s ease;
-  background-clip: padding-box;
-  border: 2px solid transparent;
-}
-
-.app-list::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-  background-clip: padding-box;
-  border: 2px solid transparent;
-}
-
-.app-list::-webkit-scrollbar-thumb:active {
-  background: var(--text-color);
-  background-clip: padding-box;
-  border: 1px solid transparent;
 }
 
 /* 高亮样式 */

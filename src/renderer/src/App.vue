@@ -33,9 +33,9 @@
 
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import SearchBox from './components/SearchBox.vue'
-import SearchResults from './components/SearchResults.vue'
-import Settings from './components/Settings.vue'
+import SearchBox from './components/search/SearchBox.vue'
+import SearchResults from './components/search/SearchResults.vue'
+import Settings from './components/settings/Settings.vue'
 import { useCommandDataStore } from './stores/commandDataStore'
 import { useWindowStore } from './stores/windowStore'
 
