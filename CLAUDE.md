@@ -227,15 +227,32 @@ pluginManager.createPluginView()
 
 #### appDataStore.ts
 
-负责应用和插件的核心数据：
+负责所有指令（应用、系统设置、插件）的核心数据：
+
+**核心概念 - "万物皆指令"**：
+
+所有可搜索的内容（应用、系统设置、插件功能）统一为 `Command` 类型。
+
+**指令类型系统**：
+
+```typescript
+export type CommandType =
+  | 'direct'   // 直接启动（应用 + 系统设置）
+  | 'plugin'   // 插件功能
+  | 'builtin'  // 内置功能
+
+export type CommandSubType =
+  | 'app'              // 系统应用
+  | 'system-setting'   // 系统设置（仅 Windows）
+```
 
 **关键状态**：
 
-- `apps: App[]` - 用于 Fuse.js 模糊搜索的列表（应用 + 功能指令）
-- `regexApps: App[]` - 用于匹配指令的列表（regex/over 类型）
+- `apps: Command[]` - 用于 Fuse.js 模糊搜索的列表（应用 + 系统设置 + 功能指令）
+- `regexApps: Command[]` - 用于匹配指令的列表（regex/over 类型）
 - `history: HistoryItem[]` - 使用历史（最多 27 个）
-- `pinnedApps: App[]` - 固定应用（最多 18 个）
-- `fuse: Fuse<App>` - 搜索引擎实例
+- `pinnedApps: Command[]` - 固定指令（最多 18 个）
+- `fuse: Fuse<Command>` - 搜索引擎实例
 - `isInitialized: boolean` - 是否已初始化
 - `loading: boolean` - 是否正在加载
 
@@ -248,20 +265,30 @@ search(query: string): {
 }
 ```
 
-**命令类型区分**：
+**指令类型详解**：
 
-- **功能指令**（`cmdType: 'text'`）：
-  - 字符串类型的 cmd，如 `"搜索"`
-  - 存入 `apps` 数组
-  - 支持 Fuse.js 拼音模糊搜索
-  - 生成 `pinyin` 和 `pinyinAbbr` 字段
+1. **直接启动指令**（`type: 'direct'`）：
+   - **系统应用**（`subType: 'app'`）：
+     - macOS: `.app` 应用
+     - Windows: `.lnk` 快捷方式
+     - 通过 `launchApp()` 启动
+   - **系统设置**（`subType: 'system-setting'`，仅 Windows）：
+     - 38 个 Windows 系统设置（ms-settings URI）
+     - 通过 `shell.openExternal()` 启动
+     - 提供统一图标，支持亮/暗色模式
 
-- **匹配指令**（`cmdType: 'regex' | 'over'`）：
-  - 对象类型的 cmd，如 `{ type: 'regex', ... }`
-  - 存入 `regexApps` 数组
-  - 独立匹配逻辑（不参与 Fuse 搜索）
-  - regex 类型：通过正则表达式匹配，需满足 `minLength`
-  - over 类型：匹配任意文本，支持 `minLength`、`maxLength`、`exclude` 规则
+2. **插件指令**（`type: 'plugin'`）：
+   - **功能指令**（`cmdType: 'text'`）：
+     - 字符串类型的 cmd，如 `"搜索"`
+     - 存入 `apps` 数组
+     - 支持 Fuse.js 拼音模糊搜索
+     - 生成 `pinyin` 和 `pinyinAbbr` 字段
+   - **匹配指令**（`cmdType: 'regex' | 'over'`）：
+     - 对象类型的 cmd，如 `{ type: 'regex', ... }`
+     - 存入 `regexApps` 数组
+     - 独立匹配逻辑（不参与 Fuse 搜索）
+     - regex 类型：通过正则表达式匹配，需满足 `minLength`
+     - over 类型：匹配任意文本，支持 `minLength`、`maxLength`、`exclude` 规则
 
 **数据加载时机**：
 
@@ -376,6 +403,64 @@ interface DbDoc {
 - `plugin-opened` / `plugin-closed` - 插件生命周期
 - `window-info-changed` - 窗口信息更新
 - `ipc-launch` - 通过全局快捷键启动插件
+
+### 系统设置集成（Windows）
+
+**概述**：ZTools 支持 Windows 系统设置作为可搜索指令，提供快速访问常用系统功能。
+
+**技术实现**：
+
+```typescript
+// src/main/core/systemSettings/windowsSettings.ts
+export interface SystemSetting {
+  name: string        // 中文名称
+  nameEn?: string     // 英文名称
+  uri: string         // ms-settings URI
+  category: string    // 分类
+  icon: string        // 图标路径（统一使用 settings-fill.png）
+  keywords?: string[] // 搜索关键词
+}
+
+// 38 个常用系统设置
+export const WINDOWS_SETTINGS: SystemSetting[] = [
+  { name: '显示设置', uri: 'ms-settings:display', category: '系统', icon: '...' },
+  { name: '网络和 Internet', uri: 'ms-settings:network', category: '网络', icon: '...' },
+  // ...
+]
+```
+
+**加载流程**：
+
+```
+应用启动 → 检测 Windows 平台
+    ↓
+loadApps() 加载系统设置
+    ↓
+转换为 Command 对象（type: 'direct', subType: 'system-setting'）
+    ↓
+添加拼音索引，加入 apps 数组
+    ↓
+用户搜索 → Fuse.js 匹配 → 启动 shell.openExternal(uri)
+```
+
+**图标处理**：
+
+- 统一图标：`resources/icons/settings-fill.png`（白色 SVG）
+- 开发模式：`app.getAppPath()/resources/icons/settings-fill.png`
+- 打包模式：`process.resourcesPath/icons/settings-fill.png`
+- 转换为 `file:///` 协议供渲染进程使用
+- CSS 滤镜：亮色模式显示为灰色，暗色模式保持白色
+
+**分类覆盖**：
+
+- 系统（显示、声音、通知、电源等）
+- 网络（Wi-Fi、以太网、代理等）
+- 个性化（主题、颜色、锁屏等）
+- 账户（用户账户、登录选项等）
+- 时间和语言（日期、区域、语言等）
+- 隐私和安全（定位、相机、麦克风等）
+- 更新和安全（Windows 更新、恢复等）
+- 应用（默认应用、启动等）
 
 ### 剪贴板系统
 
@@ -647,12 +732,14 @@ updater 重启应用
 
 - `src/renderer/src/style.css` - 全局样式和通用控件类（按钮、输入框、开关、卡片等）
 - `src/renderer/src/components/` - Vue 组件（应优先使用通用控件类）
+- `src/renderer/src/components/AllCommands.vue` - 所有指令管理页面（显示应用、系统设置、插件指令）
 - 参考"UI 组件开发（控件样式系统）"章节了解可用的控件类
 
 ### 修改搜索逻辑
 
-- `src/renderer/src/stores/appDataStore.ts` - 搜索引擎和数据加载
+- `src/renderer/src/stores/appDataStore.ts` - 搜索引擎和数据加载（Command 类型系统）
 - `src/renderer/src/components/SearchResults.vue` - 搜索结果展示和键盘导航
+- `src/main/core/systemSettings/windowsSettings.ts` - Windows 系统设置定义
 
 ### 修改数据持久化
 
@@ -1207,12 +1294,22 @@ window.exports = {
 - **macOS**：
   - 区域截图功能暂不支持
   - 窗口标识符：`bundleId` (string)
+  - 系统设置功能暂不支持（仅 Windows）
 
 - **Windows**：
   - 窗口标识符：`processId` (number)
   - 区域截图已支持
+  - 系统设置功能已支持（38 个 ms-settings 指令）
 
 - **Linux**：暂不支持（需要实现 `linuxScanner.ts` 和对应的原生模块）
+
+**系统设置集成（Windows 专属）**：
+
+- 通过 `window.ztools.isWindows()` 检测平台
+- 仅在 Windows 平台加载 `WINDOWS_SETTINGS` 列表
+- 使用 `shell.openExternal(ms-settings:xxx)` 启动
+- 图标路径自动适配开发/打包环境
+- 完全不影响 macOS 功能
 
 ### 数据库操作
 
@@ -1244,6 +1341,14 @@ window.exports = {
 5. **容错设计**：IPC 调用、数据库操作、插件加载都应该有错误处理
 
 ## 重要技术决策
+
+### 为什么采用"万物皆指令"设计？
+
+- **统一性**：应用、系统设置、插件功能统一为 `Command` 类型，简化代码逻辑
+- **可扩展性**：通过 `type` 和 `subType` 轻松添加新的指令来源
+- **用户体验**：用户无需区分"这是应用还是功能"，搜索即可
+- **类型安全**：TypeScript 类型系统提供完整的类型检查
+- **向后兼容**：不影响现有插件功能，平滑迁移
 
 ### 为什么从 PouchDB 迁移到 LMDB？
 

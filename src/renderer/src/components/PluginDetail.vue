@@ -184,6 +184,7 @@ function cmdTypeBadge(cmd: any): string {
   z-index: 10;
   display: flex;
   flex-direction: column;
+  background: var(--card-bg);
 }
 
 .detail-topbar {

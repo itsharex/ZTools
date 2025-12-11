@@ -18,7 +18,7 @@
         <div
           v-for="plugin in plugins"
           :key="plugin.path"
-          class="plugin-item"
+          class="card plugin-item"
           :title="plugin.description"
           @click="openPluginDetail(plugin)"
         >
@@ -372,7 +372,8 @@ function closePluginDetail(): void {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px;
+  padding: 20px;
+  background: var(--card-bg);
 }
 
 /* 自定义滚动条 */
@@ -415,16 +416,14 @@ function closePluginDetail(): void {
 .plugin-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  transition: all 0.2s;
+  padding: 12px 14px;
   cursor: pointer;
-  user-select: none;
+  transition: all 0.2s;
 }
 
 .plugin-item:hover {
   background: var(--hover-bg);
+  transform: translateX(2px);
 }
 
 .plugin-icon,

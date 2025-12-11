@@ -27,18 +27,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Command } from '../../stores/appDataStore'
 import AppList from '../AppList.vue'
-
-interface App {
-  name: string
-  path: string
-  icon?: string
-  [key: string]: any
-}
 
 interface Props {
   title: string // 标题
-  apps: App[] // 应用列表
+  apps: Command[] // 应用列表
   selectedIndex?: number // 选中索引
   emptyText?: string // 空状态文本
   draggable?: boolean // 是否支持拖拽
@@ -57,9 +51,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'select', app: App): void
-  (e: 'contextmenu', app: App): void
-  (e: 'update:apps', apps: App[]): void
+  (e: 'select', app: Command): void
+  (e: 'contextmenu', app: Command): void
+  (e: 'update:apps', apps: Command[]): void
   (e: 'update:expanded', expanded: boolean): void
 }>()
 
@@ -81,15 +75,18 @@ const isExpanded = computed({
 
 // 可见的应用列表
 const visibleApps = computed(() => {
+  let result
   if (!canExpand.value) {
     // 不可展开时，显示所有项目
-    return props.apps
+    result = props.apps
+  } else if (isExpanded.value) {
+    result = props.apps
+  } else {
+    // 折叠时显示默认行数的项目
+    result = props.apps.slice(0, defaultVisibleCount.value)
   }
-  if (isExpanded.value) {
-    return props.apps
-  }
-  // 折叠时显示默认行数的项目
-  return props.apps.slice(0, defaultVisibleCount.value)
+  
+  return result
 })
 
 // 切换展开/收起
@@ -98,7 +95,7 @@ function toggleExpand(): void {
 }
 
 // 处理拖拽更新
-function handleAppsUpdate(newOrder: App[]): void {
+function handleAppsUpdate(newOrder: Command[]): void {
   if (props.expanded) {
     // 展开状态下，直接更新
     emit('update:apps', newOrder)

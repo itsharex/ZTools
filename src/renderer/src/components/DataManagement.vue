@@ -8,19 +8,18 @@
     </div>
 
     <div v-else class="plugin-list">
-      <div v-for="pluginData in pluginDataList" :key="pluginData.pluginName" class="plugin-item">
+      <div v-for="pluginData in pluginDataList" :key="pluginData.pluginName" class="card plugin-card">
         <img v-if="pluginData.logo" :src="pluginData.logo" class="plugin-icon" alt="插件图标" />
         <div v-else class="plugin-icon-placeholder">🧩</div>
 
-        <div class="plugin-header">
-          <div class="plugin-info">
-            <h3 class="plugin-name">{{ pluginData.pluginName }}</h3>
-            <span class="doc-count"
-              >{{ pluginData.docCount }} 个文档 / {{ pluginData.attachmentCount }} 个附件</span
-            >
-          </div>
-          <button class="btn-view" @click="viewPluginDocs(pluginData.pluginName)">查看文档</button>
+        <div class="plugin-info">
+          <h3 class="plugin-name">{{ pluginData.pluginName }}</h3>
+          <span class="doc-count"
+            >{{ pluginData.docCount }} 个文档 / {{ pluginData.attachmentCount }} 个附件</span
+          >
         </div>
+        
+        <button class="btn btn-primary" @click="viewPluginDocs(pluginData.pluginName)">查看文档</button>
       </div>
     </div>
 
@@ -30,10 +29,12 @@
         <div class="modal-header">
           <h3>{{ currentPluginName }} - 文档列表</h3>
           <div class="header-actions">
-            <button class="btn-icon-danger" title="清空所有数据" @click="handleClearData">
+            <button class="btn btn-icon btn-danger" title="清空所有数据" @click="handleClearData">
               <Icon name="trash" :size="18" />
             </button>
-            <button class="btn-close" @click="closeDocListModal">✕</button>
+            <button class="btn btn-icon" @click="closeDocListModal">
+              <Icon name="close" :size="18" />
+            </button>
           </div>
         </div>
         <div class="modal-body">
@@ -42,12 +43,12 @@
             <div
               v-for="docItem in docKeys"
               :key="docItem.key"
-              class="doc-item"
+              class="card doc-card"
               :class="{ active: selectedDocKey === docItem.key }"
               @click="viewDocContent(docItem.key)"
             >
               <span class="doc-key">{{ docItem.key }}</span>
-              <span class="doc-type" :class="`type-${docItem.type}`">
+              <span class="doc-type-badge" :class="`type-${docItem.type}`">
                 {{ docItem.type === 'document' ? '文档' : '附件' }}
               </span>
             </div>
@@ -61,7 +62,9 @@
       <div class="modal-content modal-large" @click.stop>
         <div class="modal-header">
           <h3>文档详情</h3>
-          <button class="btn-close" @click="closeDocDetailModal">✕</button>
+          <button class="btn btn-icon" @click="closeDocDetailModal">
+            <Icon name="close" :size="18" />
+          </button>
         </div>
         <div class="modal-body">
           <div class="doc-key-display">
@@ -213,6 +216,7 @@ onMounted(() => {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--card-bg);
 }
 
 /* 自定义滚动条 */
@@ -257,38 +261,37 @@ onMounted(() => {
 .plugin-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-.plugin-item {
+.plugin-card {
   display: flex;
   align-items: center;
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  padding: 14px 16px;
+  cursor: default;
   transition: all 0.2s;
 }
 
-.plugin-item:hover {
-  border-color: color-mix(in srgb, var(--primary-color), black 15%);
-  box-shadow: 0 2px 8px var(--shadow-color);
-}
-
-.plugin-icon,
-.plugin-icon-placeholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  margin-right: 16px;
-  flex-shrink: 0;
+.plugin-card:hover {
+  background: var(--hover-bg);
+  transform: translateX(2px);
 }
 
 .plugin-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  margin-right: 14px;
+  flex-shrink: 0;
   object-fit: cover;
 }
 
 .plugin-icon-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  margin-right: 14px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,44 +299,21 @@ onMounted(() => {
   font-size: 24px;
 }
 
-.plugin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-}
-
 .plugin-info {
   flex: 1;
+  min-width: 0;
 }
 
 .plugin-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
   margin-bottom: 4px;
 }
 
 .doc-count {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.btn-view {
-  padding: 4px 12px;
-  border: 1px solid var(--primary-color);
-  border-radius: 4px;
-  background: var(--bg-color);
-  color: var(--primary-color);
   font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-view:hover {
-  background: var(--primary-color);
-  color: var(--text-on-primary);
+  color: var(--text-secondary);
 }
 
 /* 弹窗样式 */
@@ -369,12 +349,12 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--divider-color);
 }
 
 .modal-header h3 {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
@@ -386,46 +366,14 @@ onMounted(() => {
   gap: 8px;
 }
 
-.btn-icon-danger {
-  background: none;
-  border: none;
-  color: var(--danger-color);
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.btn-icon-danger:hover {
-  background: var(--danger-light-bg);
-}
-
-.btn-close {
-  background: none;
-  border: none;
+/* 关闭按钮特殊样式 */
+.btn.btn-icon {
   font-size: 24px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.btn-close:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
+  font-weight: 300;
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
   flex: 1;
 }
@@ -436,62 +384,59 @@ onMounted(() => {
   gap: 8px;
 }
 
-.doc-item {
-  padding: 12px 16px;
-  background: var(--card-bg);
-  border-radius: 8px;
+.doc-card {
+  padding: 10px 12px;
   cursor: pointer;
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
-  color: var(--text-primary);
-  transition: all 0.2s;
   display: flex;
-  user-select: none;
   justify-content: space-between;
   align-items: center;
+  transition: all 0.2s;
 }
 
-.doc-item .doc-key {
+.doc-card:hover {
+  background: var(--hover-bg);
+  transform: translateX(2px);
+}
+
+.doc-card.active {
+  background: var(--active-bg);
+}
+
+.doc-key {
   flex: 1;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: var(--text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.doc-item .doc-type {
+.doc-type-badge {
   margin-left: 12px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   flex-shrink: 0;
 }
 
-.doc-type.type-document {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+.doc-type-badge.type-document {
+  background: var(--primary-light-bg);
+  color: var(--primary-color);
 }
 
-.doc-type.type-attachment {
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
-}
-
-.doc-item:hover {
-  background: var(--hover-bg);
-}
-
-.doc-item.active {
-  background: var(--hover-bg);
-  box-shadow: inset 0 0 0 1px var(--primary-color);
+.doc-type-badge.type-attachment {
+  background: var(--purple-light-bg);
+  color: var(--purple-color);
 }
 
 .doc-key-display {
-  margin-bottom: 16px;
-  padding: 12px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
   background: var(--bg-color);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 .doc-key-display .label {
@@ -506,39 +451,36 @@ onMounted(() => {
 }
 
 .doc-key-display .value.type-badge {
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 .doc-key-display .value.type-badge.type-document {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background: var(--primary-light-bg);
+  color: var(--primary-color);
 }
 
 .doc-key-display .value.type-badge.type-attachment {
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
+  background: var(--purple-light-bg);
+  color: var(--purple-color);
 }
 
 .doc-content {
   background: var(--bg-color);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 12px;
   overflow-x: auto;
 }
 
 .doc-content pre {
   margin: 0;
   font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-all;
