@@ -13,7 +13,9 @@
           class="card plugin-card"
         >
           <img v-if="pluginData.logo" :src="pluginData.logo" class="plugin-icon" alt="插件图标" />
-          <div v-else class="plugin-icon-placeholder">🧩</div>
+          <div v-else class="plugin-icon-placeholder">
+            <Icon name="plugin" :size="24" />
+          </div>
 
           <div class="plugin-info">
             <h3 class="plugin-name">{{ pluginData.pluginName }}</h3>
@@ -284,7 +286,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   background: var(--active-bg);
-  font-size: 24px;
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .plugin-info {

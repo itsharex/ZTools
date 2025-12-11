@@ -67,7 +67,7 @@
 
         <!-- 空状态 -->
         <div v-if="shortcuts.length === 0" class="empty-state">
-          <div class="empty-icon">⌨️</div>
+          <Icon name="keyboard" :size="64" class="empty-icon" />
           <div class="empty-text">暂无全局快捷键</div>
           <div class="empty-hint">点击"添加快捷键"来创建你的第一个全局快捷键</div>
         </div>
@@ -89,6 +89,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import ShortcutEditor from './ShortcutEditor.vue'
+import Icon from '../common/Icon.vue'
 
 interface GlobalShortcut {
   id: string
@@ -373,9 +374,9 @@ onMounted(() => {
 }
 
 .empty-icon {
-  font-size: 64px;
   margin-bottom: 16px;
-  opacity: 0.5;
+  opacity: 0.3;
+  color: var(--text-secondary);
 }
 
 .empty-text {

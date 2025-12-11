@@ -133,7 +133,7 @@
 
         <!-- 空状态 -->
         <div v-if="!isLoading && plugins.length === 0" class="empty-state">
-          <div class="empty-icon">📦</div>
+          <Icon name="plugin" :size="64" class="empty-icon" />
           <div class="empty-text">暂无插件</div>
           <div class="empty-hint">点击"导入本地插件"来安装你的第一个插件</div>
         </div>
@@ -156,6 +156,7 @@
 import { onMounted, ref } from 'vue'
 import { useCommandDataStore } from '../../stores/commandDataStore'
 import PluginDetail from './PluginDetail.vue'
+import Icon from '../common/Icon.vue'
 
 const appDataStore = useCommandDataStore()
 
@@ -555,9 +556,9 @@ function closePluginDetail(): void {
 }
 
 .empty-icon {
-  font-size: 64px;
   margin-bottom: 16px;
-  opacity: 0.5;
+  opacity: 0.3;
+  color: var(--text-secondary);
 }
 
 .empty-text {
