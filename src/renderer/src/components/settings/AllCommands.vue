@@ -164,13 +164,37 @@
               >
                 <template v-if="cmd.type === 'regex'">
                   <code class="tag-code">{{ cmd.match.match }}</code>
+                  <span class="tag-badge">正则</span>
                 </template>
                 <template v-else-if="cmd.type === 'over'">
                   <span class="tag-text"
-                    >长度 {{ cmd.match.minLength }}-{{ cmd.match.maxLength || 10000 }}</span
+                    >长度 {{ cmd.match.minLength || 1 }}-{{ cmd.match.maxLength || 10000 }}</span
                   >
+                  <span class="tag-badge">任意</span>
                 </template>
-                <span class="tag-badge">{{ cmd.type === 'regex' ? '正则' : '任意' }}</span>
+                <template v-else-if="cmd.type === 'img'">
+                  <span class="tag-text">{{ cmd.name }}</span>
+                  <span class="tag-badge">图片</span>
+                </template>
+                <template v-else-if="cmd.type === 'files'">
+                  <span class="tag-text">{{ cmd.name }}</span>
+                  <span v-if="cmd.match.fileType" class="tag-info">{{
+                    cmd.match.fileType === 'file' ? '文件' : '文件夹'
+                  }}</span>
+                  <span v-if="cmd.match.extensions" class="tag-info"
+                    >{{ cmd.match.extensions.slice(0, 3).join(', ')
+                    }}{{ cmd.match.extensions.length > 3 ? '...' : '' }}</span
+                  >
+                  <span class="tag-badge">文件</span>
+                </template>
+                <template v-else-if="cmd.type === 'window'">
+                  <span class="tag-text">{{ cmd.name }}</span>
+                  <span class="tag-badge">窗口</span>
+                </template>
+                <template v-else>
+                  <span class="tag-text">{{ cmd.name }}</span>
+                  <span class="tag-badge">{{ cmd.type }}</span>
+                </template>
               </span>
             </div>
           </div>
@@ -653,6 +677,39 @@ onMounted(async () => {
   color: white;
 }
 
+/* 图片匹配指令 */
+.command-tag.tag-img {
+  background: var(--success-light-bg);
+  color: var(--success-color);
+}
+
+.command-tag.tag-img:hover {
+  background: var(--success-color);
+  color: white;
+}
+
+/* 文件匹配指令 */
+.command-tag.tag-files {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+}
+
+.command-tag.tag-files:hover {
+  background: rgb(59, 130, 246);
+  color: white;
+}
+
+/* 窗口匹配指令 */
+.command-tag.tag-window {
+  background: rgba(234, 179, 8, 0.1);
+  color: rgb(234, 179, 8);
+}
+
+.command-tag.tag-window:hover {
+  background: rgb(234, 179, 8);
+  color: white;
+}
+
 /* 正则表达式代码 */
 .tag-code {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -672,6 +729,15 @@ onMounted(async () => {
 .tag-text {
   font-size: 11px;
   opacity: 0.9;
+}
+
+/* 附加信息 */
+.tag-info {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  opacity: 0.8;
 }
 
 /* 类型徽章 */
