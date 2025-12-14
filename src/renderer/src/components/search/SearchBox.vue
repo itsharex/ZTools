@@ -2,6 +2,11 @@
   <div class="search-box">
     <!-- 隐藏的测量元素,用于计算文本宽度 -->
     <div class="search-input-container">
+      <!-- 粘贴的图片缩略图 -->
+      <div v-if="pastedImage" class="pasted-image-thumbnail" @click="clearPastedImage">
+        <img :src="pastedImage" alt="粘贴的图片" />
+        <div class="clear-icon">×</div>
+      </div>
       <span ref="measureRef" class="measure-text"></span>
       <input
         ref="inputRef"
@@ -17,6 +22,7 @@
         @keydown.right="(e) => keydownEvent(e, 'right')"
         @keydown.down="(e) => keydownEvent(e, 'down')"
         @keydown.up="(e) => keydownEvent(e, 'up')"
+        @paste="handlePaste"
       />
     </div>
     <!-- 操作栏 -->
@@ -48,11 +54,13 @@ import UpdateIcon from './UpdateIcon.vue'
 
 const props = defineProps<{
   modelValue: string
+  pastedImage?: string | null
   currentView?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
+  (e: 'update:pastedImage', value: string | null): void
   (e: 'keydown', event: KeyboardEvent): void
   (e: 'arrow-keydown', event: KeyboardEvent, direction: 'left' | 'right' | 'up' | 'down'): void
   (e: 'composing', isComposing: boolean): void
@@ -125,6 +133,17 @@ function onKeydown(event: KeyboardEvent): void {
   if (isComposing.value && event.key === 'Enter') {
     return
   }
+
+  // 如果有粘贴的图片，按 Backspace 或 Delete 键清除图片
+  if (props.pastedImage && (event.key === 'Backspace' || event.key === 'Delete')) {
+    // 如果输入框为空，清除图片
+    if (!props.modelValue) {
+      event.preventDefault()
+      clearPastedImage()
+      return
+    }
+  }
+
   emit('keydown', event)
 }
 
@@ -134,6 +153,42 @@ function keydownEvent(event: KeyboardEvent, direction: 'left' | 'right' | 'up' |
     return
   }
   emit('arrow-keydown', event, direction)
+}
+
+// 处理粘贴事件
+async function handlePaste(event: ClipboardEvent): Promise<void> {
+  const items = event.clipboardData?.items
+  if (!items) return
+
+  // 遍历粘贴的项目
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+
+    // 检查是否为图片
+    if (item.type.startsWith('image/')) {
+      event.preventDefault() // 阻止默认粘贴行为
+
+      const file = item.getAsFile()
+      if (!file) continue
+
+      // 将图片转换为 base64
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string
+        emit('update:pastedImage', base64)
+      }
+      reader.readAsDataURL(file)
+      break // 只处理第一张图片
+    }
+  }
+}
+
+// 清除粘贴的图片
+function clearPastedImage(): void {
+  emit('update:pastedImage', null)
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
 }
 
 function updateInputWidth(): void {
@@ -302,6 +357,52 @@ defineExpose({
 
 .search-input-container {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pasted-image-thumbnail {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.pasted-image-thumbnail:hover {
+  opacity: 0.8;
+}
+
+.pasted-image-thumbnail:hover .clear-icon {
+  opacity: 1;
+}
+
+.pasted-image-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.clear-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 0 0 0 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .search-actions {

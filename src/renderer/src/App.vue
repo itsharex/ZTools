@@ -5,6 +5,7 @@
         <SearchBox
           ref="searchBoxRef"
           v-model="searchQuery"
+          v-model:pasted-image="pastedImageData"
           :current-view="currentView"
           @composing="handleComposing"
           @settings-click="handleSettingsClick"
@@ -17,6 +18,7 @@
         v-if="currentView === ViewMode.Search"
         ref="searchResultsRef"
         :search-query="searchQuery"
+        :pasted-image="pastedImageData"
         @height-changed="updateWindowHeight"
       />
 
@@ -56,12 +58,26 @@ const searchResultsRef = ref<{
   handleKeydown: (e: KeyboardEvent) => void
   resetSelection: () => void
 } | null>(null)
+// 粘贴的图片数据
+const pastedImageData = ref<string | null>(null)
 
 // 监听搜索框输入变化
 watch(searchQuery, (newValue) => {
   // 如果在插件模式下,通知主进程,由主进程转发给插件
   if (currentView.value === ViewMode.Plugin && windowStore.currentPlugin) {
     window.ztools.notifySubInputChange(newValue)
+  }
+  // 输入变化时清除粘贴的图片
+  if (newValue && pastedImageData.value) {
+    pastedImageData.value = null
+  }
+})
+
+// 监听粘贴图片数据变化
+watch(pastedImageData, (newValue) => {
+  // 粘贴图片时清空搜索框文本
+  if (newValue) {
+    searchQuery.value = ''
   }
 })
 
@@ -217,8 +233,9 @@ function handleKeydown(event: KeyboardEvent): void {
     }
 
     // 搜索页面
-    if (searchQuery.value.trim()) {
+    if (searchQuery.value.trim() || pastedImageData.value) {
       searchQuery.value = ''
+      pastedImageData.value = null
     } else {
       window.ztools.hideWindow()
     }
@@ -251,6 +268,7 @@ onMounted(async () => {
       return
     }
     searchQuery.value = ''
+    pastedImageData.value = null // 清除粘贴的图片
     searchResultsRef.value?.resetSelection()
 
     // 隐藏插件视图
@@ -307,6 +325,8 @@ onMounted(async () => {
   window.ztools.onPluginOpened((plugin) => {
     console.log('插件已打开:', plugin)
     windowStore.updateCurrentPlugin(plugin)
+    // 清除粘贴的图片
+    pastedImageData.value = null
   })
 
   // 监听插件关闭事件

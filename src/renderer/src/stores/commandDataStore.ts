@@ -20,8 +20,14 @@ interface OverCmd {
   maxLength?: number // 最多字符数，默认 10000
 }
 
+// Img 匹配指令
+interface ImgCmd {
+  type: 'img'
+  label: string
+}
+
 // 匹配指令联合类型
-type MatchCmd = RegexCmd | OverCmd
+type MatchCmd = RegexCmd | OverCmd | ImgCmd
 
 // 指令类型枚举
 export type CommandType =
@@ -45,8 +51,8 @@ export interface Command {
   subType?: CommandSubType // 子类型（用于区分 direct 类型）
   featureCode?: string // 插件功能代码（用于启动时指定功能）
   pluginExplain?: string // 插件功能说明
-  matchCmd?: MatchCmd // 匹配指令配置（regex 或 over）
-  cmdType?: 'text' | 'regex' | 'over' // cmd类型：text=字符串，regex=正则表达式，over=任意文本匹配
+  matchCmd?: MatchCmd // 匹配指令配置（regex 或 over 或 img）
+  cmdType?: 'text' | 'regex' | 'over' | 'img' // cmd类型：text=字符串，regex=正则表达式，over=任意文本匹配，img=图片
   matches?: MatchInfo[] // 搜索匹配信息（用于高亮显示）
   // 系统设置字段（新增）
   settingUri?: string // ms-settings URI
@@ -491,6 +497,11 @@ export const useCommandDataStore = defineStore('commandData', () => {
     return { bestMatches, regexMatches }
   }
 
+  // 搜索支持图片的指令
+  function searchImageCommands(): SearchResult[] {
+    return regexCommands.value.filter((cmd) => cmd.matchCmd?.type === 'img')
+  }
+
   // ==================== 历史记录相关 ====================
 
   // 保存历史记录到数据库
@@ -652,6 +663,7 @@ export const useCommandDataStore = defineStore('commandData', () => {
     // 指令和搜索相关
     loadCommands,
     search,
+    searchImageCommands,
     reloadUserData,
 
     // 指令历史记录方法（添加由后端处理）

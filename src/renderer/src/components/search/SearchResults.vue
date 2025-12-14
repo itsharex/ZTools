@@ -1,7 +1,7 @@
 <template>
   <div ref="scrollContainerRef" class="scrollable-content">
     <!-- 无搜索时显示历史 -->
-    <div v-if="!searchQuery.trim()" class="content-section">
+    <div v-if="!searchQuery.trim() && !pastedImage" class="content-section">
       <!-- 最近使用 -->
       <CollapsibleList
         v-model:expanded="isRecentExpanded"
@@ -92,6 +92,7 @@ import CollapsibleList from '../common/CollapsibleList.vue'
 
 interface Props {
   searchQuery: string
+  pastedImage?: string | null
 }
 
 const props = defineProps<Props>()
@@ -107,6 +108,7 @@ const appDataStore = useCommandDataStore()
 const {
   loading,
   search,
+  searchImageCommands,
   getRecentCommands,
   removeFromHistory,
   pinCommand,
@@ -128,12 +130,20 @@ const scrollContainerRef = ref<HTMLElement>()
 
 // 搜索结果
 const internalSearchResults = computed(() => {
+  // 如果粘贴了图片,返回支持图片的指令
+  if (props.pastedImage) {
+    console.log('searchImageCommands', searchImageCommands())
+    return searchImageCommands()
+  }
+  // 否则正常搜索
   const result = search(props.searchQuery)
   return result.bestMatches
 })
 
 // 分离系统设置结果
 const systemSettingResults = computed(() => {
+  // 粘贴图片时不显示系统设置
+  if (props.pastedImage) return []
   if (!props.searchQuery.trim()) return []
   return internalSearchResults.value.filter(
     (item: any) => item.type === 'direct' && item.subType === 'system-setting'
@@ -142,6 +152,10 @@ const systemSettingResults = computed(() => {
 
 // 应用和插件结果（排除系统设置）
 const appAndPluginResults = computed(() => {
+  // 粘贴图片时显示所有支持图片的指令
+  if (props.pastedImage) {
+    return internalSearchResults.value
+  }
   if (!props.searchQuery.trim()) return []
   return internalSearchResults.value.filter(
     (item: any) => !(item.type === 'direct' && item.subType === 'system-setting')
@@ -150,12 +164,14 @@ const appAndPluginResults = computed(() => {
 
 // 推荐列表
 const recommendations = computed(() => {
+  // 粘贴图片时不显示推荐
+  if (props.pastedImage) return []
   if (props.searchQuery.trim() === '') {
     return []
   }
 
-  const result = search(props.searchQuery)
-  const regexResults = result.regexMatches
+  const searchResult = search(props.searchQuery)
+  const regexResults = searchResult.regexMatches
 
   // 正则匹配结果 + 百度搜索（内置，放最后）
   return [
@@ -193,6 +209,8 @@ const finderActions = computed(() => {
 
 // 显示的应用列表
 const displayApps = computed(() => {
+  // 粘贴图片时不显示历史记录
+  if (props.pastedImage) return []
   if (props.searchQuery.trim() === '') {
     return getRecentCommands()
   } else {
@@ -270,8 +288,8 @@ const visibleRecommendations = computed(() => {
 const navigationGrid = computed(() => {
   const sections: any[] = []
 
-  if (props.searchQuery.trim()) {
-    // 有搜索时：应用和插件 + 系统设置 + 推荐
+  if (props.searchQuery.trim() || props.pastedImage) {
+    // 有搜索或粘贴图片时：应用和插件 + 系统设置 + 推荐
     if (visibleAppAndPluginResults.value.length > 0) {
       const searchGrid = arrayToGrid(visibleAppAndPluginResults.value)
       searchGrid.forEach((row) => {
@@ -373,16 +391,13 @@ const selectedItem = computed(() => {
 })
 
 // 监听搜索内容变化,重置选中状态
-watch(
-  () => props.searchQuery,
-  () => {
-    selectedRow.value = 0
-    selectedCol.value = 0
-    nextTick(() => {
-      emit('height-changed')
-    })
-  }
-)
+watch([() => props.searchQuery, () => props.pastedImage], () => {
+  selectedRow.value = 0
+  selectedCol.value = 0
+  nextTick(() => {
+    emit('height-changed')
+  })
+})
 
 // 监听展开状态变化，调整窗口高度
 watch(
@@ -554,7 +569,7 @@ async function handleSelectApp(app: any): Promise<void> {
       name: app.name, // 传递 cmd 名称用于历史记录显示
       cmdType: app.cmdType || 'text', // 传递 cmdType 用于判断是否添加历史
       param: {
-        payload: props.searchQuery,
+        payload: app.cmdType === 'img' ? props.pastedImage : props.searchQuery,
         type: app.cmdType || 'text' // 传递 cmdType，默认为 text
       }
     })

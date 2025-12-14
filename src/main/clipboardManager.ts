@@ -143,7 +143,13 @@ class ClipboardManager {
       let item: Partial<ClipboardItem> | null = null
 
       // 优先级：文件 > 图片 > 文本
-      if (clipboard.has('NSFilenamesPboardType')) {
+      // 跨平台文件检测
+      const hasFiles =
+        os.platform() === 'darwin'
+          ? clipboard.has('NSFilenamesPboardType')
+          : clipboard.availableFormats().includes('FileNameW')
+
+      if (hasFiles) {
         item = await this.handleFile()
       } else if (!clipboard.readImage().isEmpty()) {
         item = await this.handleImage()
@@ -165,28 +171,54 @@ class ClipboardManager {
   // 处理文件
   private async handleFile(): Promise<Partial<ClipboardItem>> {
     try {
-      // macOS 使用 NSFilenamesPboardType 格式
-      if (!clipboard.has('NSFilenamesPboardType')) {
-        console.error('没有文件类型数据')
-        return null as any
-      }
+      let filePaths: string[] = []
 
-      const result = clipboard.read('NSFilenamesPboardType')
-      console.log('文件原始数据:', result)
+      if (os.platform() === 'darwin') {
+        // macOS 使用 NSFilenamesPboardType 格式
+        if (!clipboard.has('NSFilenamesPboardType')) {
+          console.error('没有文件类型数据')
+          return null as any
+        }
 
-      if (!result) {
-        console.error('读取文件数据为空')
-        return null as any
-      }
+        const result = clipboard.read('NSFilenamesPboardType')
+        console.log('文件原始数据:', result)
 
-      // 解析 plist 格式
-      let filePaths: string[]
-      try {
-        filePaths = plist.parse(result) as string[]
-        console.log('解析后的文件列表:', filePaths)
-      } catch (error) {
-        console.error('plist 解析失败:', error)
-        return null as any
+        if (!result) {
+          console.error('读取文件数据为空')
+          return null as any
+        }
+
+        // 解析 plist 格式
+        try {
+          filePaths = plist.parse(result) as string[]
+          console.log('解析后的文件列表:', filePaths)
+        } catch (error) {
+          console.error('plist 解析失败:', error)
+          return null as any
+        }
+      } else {
+        // Windows 使用 FileNameW 格式
+        const formats = clipboard.availableFormats()
+        if (!formats.includes('FileNameW')) {
+          console.error('没有文件类型数据')
+          return null as any
+        }
+
+        try {
+          const buffer = clipboard.readBuffer('FileNameW')
+          if (!buffer || buffer.length === 0) {
+            console.error('读取文件数据为空')
+            return null as any
+          }
+
+          // 转换为 UCS-2 字符串，按 \0 分割，过滤空字符串
+          const filePathsString = buffer.toString('ucs2')
+          filePaths = filePathsString.split('\0').filter((path) => path.trim().length > 0)
+          console.log('解析后的文件列表:', filePaths)
+        } catch (error) {
+          console.error('解析 Windows 文件列表失败:', error)
+          return null as any
+        }
       }
 
       if (!Array.isArray(filePaths) || filePaths.length === 0) {
@@ -603,17 +635,39 @@ class ClipboardManager {
         }
 
         case 'file': {
-          if (clipboard.has('NSFilenamesPboardType')) {
-            try {
-              const result = clipboard.read('NSFilenamesPboardType')
-              if (result) {
-                const currentFilePaths = plist.parse(result) as string[]
-                const itemFilePaths = item.files?.map((f) => f.path) || []
-                // 比较文件路径列表（顺序也要一致）
-                isSame = JSON.stringify(currentFilePaths) === JSON.stringify(itemFilePaths)
+          // 跨平台文件比较
+          if (os.platform() === 'darwin') {
+            if (clipboard.has('NSFilenamesPboardType')) {
+              try {
+                const result = clipboard.read('NSFilenamesPboardType')
+                if (result) {
+                  const currentFilePaths = plist.parse(result) as string[]
+                  const itemFilePaths = item.files?.map((f) => f.path) || []
+                  // 比较文件路径列表（顺序也要一致）
+                  isSame = JSON.stringify(currentFilePaths) === JSON.stringify(itemFilePaths)
+                }
+              } catch (error) {
+                console.error('解析当前剪贴板文件列表失败:', error)
               }
-            } catch (error) {
-              console.error('解析当前剪贴板文件列表失败:', error)
+            }
+          } else {
+            // Windows
+            const formats = clipboard.availableFormats()
+            if (formats.includes('FileNameW')) {
+              try {
+                const buffer = clipboard.readBuffer('FileNameW')
+                if (buffer && buffer.length > 0) {
+                  const filePathsString = buffer.toString('ucs2')
+                  const currentFilePaths = filePathsString
+                    .split('\0')
+                    .filter((path) => path.trim().length > 0)
+                  const itemFilePaths = item.files?.map((f) => f.path) || []
+                  // 比较文件路径列表（顺序也要一致）
+                  isSame = JSON.stringify(currentFilePaths) === JSON.stringify(itemFilePaths)
+                }
+              } catch (error) {
+                console.error('解析当前剪贴板文件列表失败:', error)
+              }
             }
           }
           break
@@ -653,12 +707,20 @@ class ClipboardManager {
           break
 
         case 'file':
-          // 使用 NSFilenamesPboardType 格式写回文件列表
+          // 跨平台写回文件列表
           if (item.files && item.files.length > 0) {
             try {
               const filePaths = item.files.map((f: FileItem) => f.path)
-              const plistData = plist.stringify(filePaths)
-              clipboard.writeBuffer('NSFilenamesPboardType', Buffer.from(plistData))
+              if (os.platform() === 'darwin') {
+                // macOS 使用 NSFilenamesPboardType 格式
+                const plistData = plist.stringify(filePaths)
+                clipboard.writeBuffer('NSFilenamesPboardType', Buffer.from(plistData))
+              } else {
+                // Windows 使用 FileNameW 格式
+                // 文件路径用 \0 分隔，最后再加一个 \0
+                const filePathsString = filePaths.join('\0') + '\0'
+                clipboard.writeBuffer('FileNameW', Buffer.from(filePathsString, 'ucs2'))
+              }
               console.log('文件列表已写回剪贴板:', filePaths)
               return true
             } catch (error) {
