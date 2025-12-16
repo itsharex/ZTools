@@ -97,15 +97,15 @@ export const useWindowStore = defineStore('window', () => {
     }
   }
 
-  // 更新子输入框 placeholder (根据插件路径)
-  function updateSubInputPlaceholder(pluginPath: string, placeholder: string): void {
+  // 更新子输入框 placeholder
+  function updateSubInputPlaceholder(placeholder: string): void {
     const newValue = placeholder || '搜索'
 
     // 仅更新当前显示的 placeholder，不再存储到本地 map
     // 后端已经通过 IPC 更新了持久化数据
 
     // 如果是当前激活的插件,立即更新显示
-    if (currentPlugin.value && currentPlugin.value.path === pluginPath) {
+    if (currentPlugin.value) {
       subInputPlaceholder.value = newValue
       console.log('当前插件,立即更新 placeholder:', newValue)
     }

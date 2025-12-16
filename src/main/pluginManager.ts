@@ -5,6 +5,7 @@ import hideWindowHtml from '../../resources/hideWindow.html?asset'
 import api from './api/index.js'
 
 import mainPreload from '../../resources/preload.js?asset'
+import detachedWindowManager from './core/detachedWindowManager.js'
 import pluginWindowManager from './core/pluginWindowManager.js'
 
 console.log('mainPreload', mainPreload)
@@ -15,6 +16,7 @@ interface PluginViewInfo {
   view: WebContentsView
   height?: number
   subInputPlaceholder?: string
+  subInputValue?: string // 搜索框的值
   logo?: string
   isDevelopment?: boolean
 }
@@ -469,6 +471,17 @@ class PluginManager {
     }
   }
 
+  // 设置子输入框值
+  public setSubInputValue(value: string): void {
+    if (!this.pluginView) return
+
+    // 更新缓存中的值
+    const cached = this.pluginViews.find((v) => v.view === this.pluginView)
+    if (cached) {
+      cached.subInputValue = value
+    }
+  }
+
   // 更新插件视图大小（跟随窗口大小变化）
   public updatePluginViewBounds(width: number, height: number): void {
     if (!this.pluginView) return
@@ -663,15 +676,18 @@ class PluginManager {
       const [windowWidth] = this.mainWindow.getSize()
       const viewHeight = cached.height || 600 - 59
 
-      // 创建独立窗口
-      const detachedWindow = pluginWindowManager.createDetachedWindow(
+      // 使用新的分离窗口管理器创建窗口（使用缓存的搜索框状态）
+      const detachedWindow = detachedWindowManager.createDetachedWindow(
         this.currentPluginPath,
         pluginConfig.name,
         cached.view,
         {
           width: windowWidth,
-          height: viewHeight + 59, // 加上标题栏高度
-          title: pluginConfig.name
+          height: viewHeight,
+          title: pluginConfig.name,
+          logo: cached.logo,
+          searchQuery: cached.subInputValue || '',
+          searchPlaceholder: cached.subInputPlaceholder || '搜索...'
         }
       )
 

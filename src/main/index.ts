@@ -2,6 +2,7 @@ import { platform } from '@electron-toolkit/utils'
 import { app, BrowserWindow } from 'electron'
 import api from './api/index'
 import appWatcher from './appWatcher'
+import detachedWindowManager from './core/detachedWindowManager'
 import pluginManager from './pluginManager'
 import windowManager from './windowManager'
 
@@ -20,9 +21,11 @@ export function getCurrentShortcut(): string {
 }
 
 app.whenReady().then(async () => {
-  // 隐藏 Dock 图标
+  // 隐藏 Dock 图标（仅在没有分离窗口时隐藏）
   if (platform.isMacOS) {
-    app.dock?.hide()
+    if (!detachedWindowManager.hasDetachedWindows()) {
+      app.dock?.hide()
+    }
   }
 
   // 创建主窗口

@@ -183,9 +183,27 @@ const api = {
 
 contextBridge.exposeInMainWorld('ztools', api)
 
+// 为标题栏暴露 electron API
+contextBridge.exposeInMainWorld('electron', {
+  ipcRenderer: {
+    send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
+    on: (channel: string, callback: (...args: any[]) => void): (() => void) => {
+      const subscription = (_event: any, ...args: any[]) => callback(...args)
+      ipcRenderer.on(channel, subscription)
+      return () => ipcRenderer.removeListener(channel, subscription)
+    }
+  }
+})
+
 // TypeScript 类型定义
 declare global {
   interface Window {
+    electron: {
+      ipcRenderer: {
+        send: (channel: string, ...args: any[]) => void
+        on: (channel: string, callback: (...args: any[]) => void) => () => void
+      }
+    }
     ztools: {
       getApps: () => Promise<Command[]>
       getSystemSettings: () => Promise<any[]>

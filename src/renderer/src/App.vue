@@ -80,7 +80,7 @@ const pastedTextData = ref<string | null>(null)
 
 // 监听搜索框输入变化
 watch(searchQuery, (newValue) => {
-  // 如果在插件模式下,通知主进程,由主进程转发给插件
+  // 如果在插件模式下,通知主进程,由主进程转发给插件（同时更新缓存）
   if (currentView.value === ViewMode.Plugin && windowStore.currentPlugin) {
     window.ztools.notifySubInputChange(newValue)
   }
@@ -420,7 +420,7 @@ onMounted(async () => {
   window.ztools.onUpdateSubInputPlaceholder?.(
     (data: { pluginPath: string; placeholder: string }) => {
       console.log('收到更新子输入框 placeholder 事件:', data)
-      windowStore.updateSubInputPlaceholder(data.pluginPath, data.placeholder)
+      windowStore.updateSubInputPlaceholder(data.placeholder)
     }
   )
 

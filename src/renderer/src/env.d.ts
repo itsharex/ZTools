@@ -13,6 +13,12 @@ interface LastMatchState {
 
 declare global {
   interface Window {
+    electron: {
+      ipcRenderer: {
+        send: (channel: string, ...args: any[]) => void
+        on: (channel: string, callback: (...args: any[]) => void) => () => void
+      }
+    }
     ztools: {
       getApps: () => Promise<Array<{ name: string; path: string; icon?: string }>>
       getSystemSettings: () => Promise<any[]>
