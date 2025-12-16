@@ -70,6 +70,7 @@ const searchBoxRef = ref<{ focus: () => void; selectAll: () => void } | null>(nu
 const searchResultsRef = ref<{
   handleKeydown: (e: KeyboardEvent) => void
   resetSelection: () => void
+  resetCollapseState: () => void
 } | null>(null)
 // 粘贴的图片数据
 const pastedImageData = ref<string | null>(null)
@@ -342,6 +343,8 @@ onMounted(async () => {
     }
 
     searchResultsRef.value?.resetSelection()
+    // 重置所有列表的折叠状态
+    searchResultsRef.value?.resetCollapseState()
 
     // 隐藏插件视图
     window.ztools.hidePlugin()
@@ -558,7 +561,7 @@ onUnmounted(() => {
   flex-direction: column;
   background: var(--bg-color);
   outline: none;
-  overflow-x: hidden; /* 防止横向滚动条 */
+  overflow: hidden; /* 隐藏所有滚动条 */
 }
 
 .search-window {
@@ -567,7 +570,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--bg-color);
-  overflow-x: hidden; /* 防止横向滚动条 */
+  overflow: hidden; /* 隐藏所有滚动条 */
 }
 
 .search-box-wrapper {

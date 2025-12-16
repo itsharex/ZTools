@@ -395,9 +395,8 @@ watch(
   () => {
     selectedRow.value = 0
     selectedCol.value = 0
-    nextTick(() => {
-      emit('height-changed')
-    })
+    // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+    emit('height-changed')
   }
 )
 
@@ -405,9 +404,8 @@ watch(
 watch(
   [isRecentExpanded, isPinnedExpanded, isSearchResultsExpanded, isRecommendationsExpanded],
   () => {
-    nextTick(() => {
-      emit('height-changed')
-    })
+    // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+    emit('height-changed')
   }
 )
 
@@ -465,9 +463,8 @@ watch([selectedRow, selectedCol], () => {
 watch(
   () => pinnedApps.value.length,
   () => {
-    nextTick(() => {
-      emit('height-changed')
-    })
+    // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+    emit('height-changed')
   }
 )
 
@@ -475,9 +472,8 @@ watch(
 watch(
   () => displayApps.value.length,
   () => {
-    nextTick(() => {
-      emit('height-changed')
-    })
+    // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+    emit('height-changed')
   }
 )
 
@@ -729,9 +725,9 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const { path, featureCode } = JSON.parse(jsonStr)
       await removeFromHistory(path, featureCode)
-      nextTick(() => {
-        emit('height-changed')
-      })
+      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+      emit('height-changed')
+      emit('focus-input')
     } catch (error) {
       console.error('从历史记录删除失败:', error)
     }
@@ -740,9 +736,9 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const app = JSON.parse(appJson)
       await pinCommand(app)
-      nextTick(() => {
-        emit('height-changed')
-      })
+      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+      emit('height-changed')
+      emit('focus-input')
     } catch (error) {
       console.error('固定应用失败:', error)
     }
@@ -751,9 +747,9 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const { path, featureCode } = JSON.parse(jsonStr)
       await unpinCommand(path, featureCode)
-      nextTick(() => {
-        emit('height-changed')
-      })
+      // 直接 emit，让 App.vue 的 updateWindowHeight 中的 nextTick 处理 DOM 更新
+      emit('height-changed')
+      emit('focus-input')
     } catch (error) {
       console.error('取消固定失败:', error)
     }
@@ -762,6 +758,8 @@ async function handleContextMenuCommand(command: string): Promise<void> {
     try {
       const { path: filePath } = JSON.parse(jsonStr)
       await window.ztools.revealInFinder(filePath)
+      // 打开文件位置后也聚焦搜索框（这个操作不涉及窗口高度变化）
+      emit('focus-input')
     } catch (error) {
       console.error('打开文件位置失败:', error)
     }
@@ -785,6 +783,23 @@ function handleContainerClick(event: MouseEvent): void {
   emit('focus-input')
 }
 
+// 监听搜索条件变化，重置折叠状态
+watch(
+  () => [props.searchQuery, props.pastedImage, props.pastedFiles, props.pastedText],
+  () => {
+    // 当搜索条件变化时，重置所有列表的展开状态
+    resetCollapseState()
+  }
+)
+
+// 重置所有列表的折叠状态
+function resetCollapseState(): void {
+  isRecentExpanded.value = false
+  isPinnedExpanded.value = false
+  isSearchResultsExpanded.value = false
+  isRecommendationsExpanded.value = false
+}
+
 // 初始化
 onMounted(() => {
   // 监听上下文菜单命令
@@ -795,7 +810,8 @@ onMounted(() => {
 defineExpose({
   navigationGrid,
   handleKeydown,
-  resetSelection
+  resetSelection,
+  resetCollapseState
 })
 </script>
 
@@ -805,6 +821,44 @@ defineExpose({
   overflow-y: auto;
   overflow-x: hidden;
   user-select: none; /* 禁止选取文本 */
+
+  /* Firefox 滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Webkit 浏览器（Chrome、Safari、Edge）滚动条样式 */
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 暗色模式下的滚动条颜色 */
+@media (prefers-color-scheme: dark) {
+  .scrollable-content {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .scrollable-content::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .scrollable-content::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
 }
 
 .content-section {

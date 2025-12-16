@@ -265,10 +265,11 @@ export const useCommandDataStore = defineStore('commandData', () => {
           history.value = filteredData
         })
 
-        // 如果清理了旧图标，立即保存到数据库
+        // 数据迁移已完成，不再需要保存
+        // needsSave 标记仅用于记录迁移日志
         if (needsSave) {
-          console.log('检测到旧图标路径，正在清理并保存...')
-          await saveHistory()
+          console.log('检测到需要迁移的旧数据格式，已在前端处理')
+          console.log('注意：历史记录的修改应该通过后端 API 完成，前端不直接保存')
         }
       } else {
         history.value = []
@@ -806,42 +807,6 @@ export const useCommandDataStore = defineStore('commandData', () => {
 
   // ==================== 历史记录相关 ====================
 
-  // 保存历史记录到数据库
-  async function saveHistory(): Promise<void> {
-    try {
-      const cleanData = history.value.map((item) => {
-        const data: any = {
-          name: item.name,
-          path: item.path,
-          type: item.type,
-          featureCode: item.featureCode, // 保存 featureCode
-          pluginExplain: item.pluginExplain, // 保存插件说明
-          lastUsed: item.lastUsed,
-          useCount: item.useCount
-        }
-
-        // 系统设置和特殊指令不保存 icon，让 applySpecialConfig 动态设置
-        if (
-          !(item.type === 'direct' && item.subType === 'system-setting') &&
-          !item.path?.startsWith('special:')
-        ) {
-          data.icon = item.icon
-        }
-
-        // 保存 subType（用于系统设置识别）
-        if (item.subType) {
-          data.subType = item.subType
-        }
-
-        return data
-      })
-
-      await window.ztools.dbPut(HISTORY_DOC_ID, cleanData)
-    } catch (error) {
-      console.error('保存指令历史记录失败:', error)
-    }
-  }
-
   // 获取最近使用（自动同步最新数据）
   function getRecentCommands(limit?: number): Command[] {
     // 同步历史记录数据，确保使用最新的路径和图标
@@ -868,16 +833,10 @@ export const useCommandDataStore = defineStore('commandData', () => {
     return syncedHistory
   }
 
-  // 从历史记录中删除指定指令
+  // 从历史记录中删除指定指令（通过后端 API）
   async function removeFromHistory(commandPath: string, featureCode?: string): Promise<void> {
     await window.ztools.removeFromHistory(commandPath, featureCode)
     // 后端会发送 history-changed 事件，触发重新加载
-  }
-
-  // 清空历史记录
-  async function clearHistory(): Promise<void> {
-    history.value = []
-    await saveHistory()
   }
 
   // ==================== 固定应用相关 ====================
@@ -994,7 +953,6 @@ export const useCommandDataStore = defineStore('commandData', () => {
     // 指令历史记录方法（添加由后端处理）
     getRecentCommands,
     removeFromHistory,
-    clearHistory,
 
     // 固定指令方法
     isPinned,
