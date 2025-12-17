@@ -1,10 +1,25 @@
 import { platform } from '@electron-toolkit/utils'
 import { app, BrowserWindow } from 'electron'
+import log from 'electron-log'
+import path from 'path'
 import api from './api/index'
 import appWatcher from './appWatcher'
 import detachedWindowManager from './core/detachedWindowManager'
 import pluginManager from './pluginManager'
 import windowManager from './windowManager'
+
+// 配置 electron-log
+log.transports.file.level = 'debug'
+log.transports.file.maxSize = 5 * 1024 * 1024 // 5MB
+log.transports.file.resolvePath = () => {
+  return path.join(app.getPath('userData'), 'logs/main.log')
+}
+log.transports.console.level = 'debug'
+
+// 生产环境接管 console
+// if (process.env.NODE_ENV === 'production') {
+Object.assign(console, log.functions)
+// }
 
 // 开发模式下禁用某些警告
 if (process.env.NODE_ENV !== 'production') {
