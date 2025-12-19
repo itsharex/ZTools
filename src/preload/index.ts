@@ -21,6 +21,7 @@ const api = {
   resizeWindow: (height: number) => ipcRenderer.send('resize-window', height),
   getWindowPosition: () => ipcRenderer.invoke('get-window-position'),
   setWindowPosition: (x: number, y: number) => ipcRenderer.send('set-window-position', x, y),
+  setWindowSizeLock: (lock: boolean) => ipcRenderer.send('set-window-size-lock', lock),
   setWindowOpacity: (opacity: number) => ipcRenderer.send('set-window-opacity', opacity),
   setTrayIconVisible: (visible: boolean) => ipcRenderer.invoke('set-tray-icon-visible', visible),
   setLaunchAtLogin: (enable: boolean) => ipcRenderer.invoke('set-launch-at-login', enable),

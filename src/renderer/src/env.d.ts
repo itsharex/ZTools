@@ -35,6 +35,7 @@ declare global {
       resizeWindow: (height: number) => void
       getWindowPosition: () => Promise<{ x: number; y: number }>
       setWindowPosition: (x: number, y: number) => void
+      setWindowSizeLock: (lock: boolean) => void
       setWindowOpacity: (opacity: number) => void
       setTrayIconVisible: (visible: boolean) => Promise<void>
       setLaunchAtLogin: (enable: boolean) => Promise<void>
@@ -234,4 +235,5 @@ declare global {
   }
 }
 
-export {}
+export { }
+

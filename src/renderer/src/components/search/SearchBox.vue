@@ -524,9 +524,9 @@ const useDrag = (): DragHandlers => {
   const onEnd = (e: MouseEvent): void => {
     if (!isDragging) return
     isDragging = false
+    window.ztools.setWindowSizeLock(false)
     cleanup()
 
-    // 如果不是点击输入框或按钮，则聚焦输入框
     const target = e.target as HTMLElement
     if (!target.closest('input') && !target.closest('.search-actions')) {
       inputRef.value?.focus()
@@ -541,6 +541,7 @@ const useDrag = (): DragHandlers => {
     offsetX = e.screenX - x
     offsetY = e.screenY - y
     isDragging = true
+    window.ztools.setWindowSizeLock(true)
 
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onEnd)
