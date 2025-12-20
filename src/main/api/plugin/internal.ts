@@ -4,8 +4,8 @@ import pluginsAPI from '../renderer/plugins.js'
 import settingsAPI from '../renderer/settings.js'
 import systemAPI from '../renderer/system.js'
 import windowAPI from '../renderer/window.js'
-import updaterAPI from '../updater.js'
 import databaseAPI from '../shared/database'
+import updaterAPI from '../updater.js'
 
 /**
  * 权限错误类
@@ -339,6 +339,21 @@ export class InternalPluginAPI {
         throw new PermissionDeniedError('internal:reveal-in-finder')
       }
       return await (systemAPI as any).revealInFinder(path)
+    })
+
+    // ==================== 图片分析 API ====================
+    // 直接转发到共享的 analyze-image handler（已在 imageAnalysis.ts 中注册）
+    ipcMain.handle('internal:analyze-image', async (event, imagePath: string) => {
+      if (!requireInternalPlugin(this.pluginManager, event)) {
+        throw new PermissionDeniedError('internal:analyze-image')
+      }
+      // 直接调用主进程的 analyze-image handler
+      // 通过触发器获取已注册的 handler 并调用
+      const handler = (ipcMain as any)._invokeHandlers.get('analyze-image')
+      if (handler) {
+        return await handler(event, imagePath)
+      }
+      throw new Error('analyze-image handler not found')
     })
   }
 }

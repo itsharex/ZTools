@@ -67,7 +67,7 @@ export class PluginsAPI {
   }
 
   // 获取插件列表
-  private async getPlugins(): Promise<any[]> {
+  public async getPlugins(): Promise<any[]> {
     try {
       const data = await databaseAPI.dbGet('plugins')
       const plugins = data || []
@@ -76,6 +76,11 @@ export class PluginsAPI {
       for (const plugin of plugins) {
         const dynamicFeatures = pluginFeatureAPI.loadDynamicFeatures(plugin.name)
         plugin.features = [...(plugin.features || []), ...dynamicFeatures]
+
+        // 处理插件 logo 路径
+        if (plugin.logo) {
+          plugin.logo = normalizeIconPath(plugin.logo, plugin.path)
+        }
 
         // 处理每个 feature 的 icon 路径
         if (plugin.features && Array.isArray(plugin.features)) {

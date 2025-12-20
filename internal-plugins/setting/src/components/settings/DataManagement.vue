@@ -14,7 +14,7 @@
             class="card plugin-card"
             @click="viewPluginDocs(pluginData.pluginName)"
           >
-            <img
+            <AdaptiveIcon
               v-if="pluginData.logo"
               :src="pluginData.logo"
               class="plugin-icon"
@@ -95,6 +95,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import AdaptiveIcon from '../common/AdaptiveIcon.vue'
 import DetailPanel from '../common/DetailPanel.vue'
 import Icon from '../common/Icon.vue'
 

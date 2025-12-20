@@ -11,7 +11,7 @@
         :style="{ '--icon-url': `url(${command.icon})` }"
       ></div>
       <!-- 普通图标 -->
-      <img
+      <AdaptiveIcon
         v-else-if="command.icon && !hasError"
         :src="command.icon"
         draggable="false"
@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AdaptiveIcon from '../../common/AdaptiveIcon.vue'
 
 interface Command {
   name: string

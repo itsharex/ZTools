@@ -9,6 +9,8 @@ import { launchApp } from '../../core/commandLauncher'
 import { scanApplications } from '../../core/commandScanner'
 import { pluginFeatureAPI } from '../plugin/feature'
 import databaseAPI from '../shared/database'
+import pluginsAPI from './plugins'
+import { systemSettingsAPI } from './systemSettings'
 
 const execAsync = promisify(exec)
 
@@ -707,9 +709,8 @@ export class AppsAPI {
     try {
       const rawApps = await this.getApps()
 
-      // 获取插件列表 - 直接从数据库获取
-      const pluginsData = await databaseAPI.dbGet('plugins')
-      const plugins = pluginsData || []
+      // 调用 pluginsAPI 获取插件列表（已经过路径标准化处理）
+      const plugins = await pluginsAPI.getPlugins()
 
       const commands: any[] = []
       const regexCommands: any[] = []
@@ -722,6 +723,18 @@ export class AppsAPI {
           icon: app.icon,
           type: 'direct',
           subType: 'app'
+        })
+      }
+
+      // 调用 systemSettingsAPI 获取系统设置指令
+      const systemSettings = await systemSettingsAPI.getSystemSettings()
+      for (const setting of systemSettings) {
+        commands.push({
+          name: setting.name,
+          path: setting.uri,
+          icon: undefined, // 图标由前端统一渲染
+          type: 'direct',
+          subType: 'system-setting'
         })
       }
 

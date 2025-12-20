@@ -16,7 +16,7 @@
             @click="openPluginDetail(plugin)"
           >
             <div class="plugin-icon">
-              <img :src="plugin.logo" class="plugin-logo-img" alt="icon" draggable="false" />
+              <AdaptiveIcon :src="plugin.logo" class="plugin-logo-img" alt="icon" draggable="false" />
             </div>
             <div class="plugin-info">
               <div class="plugin-name">{{ plugin.name }}</div>
@@ -120,6 +120,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import AdaptiveIcon from '../common/AdaptiveIcon.vue'
 import PluginDetail from './PluginDetail.vue'
 
 interface Plugin {

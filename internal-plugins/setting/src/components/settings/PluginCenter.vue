@@ -23,7 +23,7 @@
             :title="plugin.description"
             @click="openPluginDetail(plugin)"
           >
-            <img
+            <AdaptiveIcon
               v-if="plugin.logo"
               :src="plugin.logo"
               class="plugin-icon"
@@ -183,6 +183,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import AdaptiveIcon from '../common/AdaptiveIcon.vue'
 import Icon from '../common/Icon.vue'
 import PluginDetail from './PluginDetail.vue'
 

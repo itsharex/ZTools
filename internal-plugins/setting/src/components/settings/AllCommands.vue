@@ -6,6 +6,11 @@
         <h3>指令来源</h3>
       </div>
       <div class="sources-list">
+        <!-- 内置分组标题 -->
+        <div class="section-divider">
+          <span>内置</span>
+        </div>
+
         <!-- 系统应用 -->
         <div
           :class="['source-item', { active: selectedSource?.subType === 'app' }]"
@@ -27,19 +32,37 @@
           <span class="source-badge">{{ settingCount }}</span>
         </div>
 
-        <!-- 插件分组标题 -->
-        <div v-if="plugins.length > 0" class="section-divider">
-          <span>插件</span>
-        </div>
-
-        <!-- 插件列表 -->
+        <!-- 内置插件列表 -->
         <div
-          v-for="plugin in plugins"
+          v-for="plugin in internalPlugins"
           :key="plugin.path"
           :class="['source-item', { active: selectedSource?.path === plugin.path }]"
           @click="selectSource(plugin)"
         >
-          <img
+          <AdaptiveIcon
+            v-if="plugin.logo"
+            :src="plugin.logo"
+            class="source-icon plugin-icon"
+            draggable="false"
+          />
+          <span v-else class="source-icon">🧩</span>
+          <span class="source-name">{{ plugin.name }}</span>
+          <span class="source-badge">{{ getPluginCommandCount(plugin) }}</span>
+        </div>
+
+        <!-- 第三方插件分组标题 -->
+        <div v-if="thirdPartyPlugins.length > 0" class="section-divider">
+          <span>插件</span>
+        </div>
+
+        <!-- 第三方插件列表 -->
+        <div
+          v-for="plugin in thirdPartyPlugins"
+          :key="plugin.path"
+          :class="['source-item', { active: selectedSource?.path === plugin.path }]"
+          @click="selectSource(plugin)"
+        >
+          <AdaptiveIcon
             v-if="plugin.logo"
             :src="plugin.logo"
             class="source-icon plugin-icon"
@@ -134,6 +157,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import settingsFillIcon from '../../assets/image/settings-fill.png'
+import AdaptiveIcon from '../common/AdaptiveIcon.vue'
 import CommandCard from './common/CommandCard.vue'
 import CommandTag from './common/CommandTag.vue'
 import FeatureCard from './common/FeatureCard.vue'
@@ -176,6 +201,24 @@ const plugins = ref<any[]>([])
 const selectedSource = ref<Source | null>(null)
 const activeTab = ref<'text' | 'match'>('text')
 
+// 内置插件名称列表（与主进程保持一致）
+const INTERNAL_PLUGIN_NAMES = ['setting']
+
+// 判断是否为内置插件
+function isInternalPlugin(pluginName: string): boolean {
+  return INTERNAL_PLUGIN_NAMES.includes(pluginName)
+}
+
+// 内置插件列表
+const internalPlugins = computed(() => {
+  return plugins.value.filter((p) => isInternalPlugin(p.name))
+})
+
+// 第三方插件列表
+const thirdPartyPlugins = computed(() => {
+  return plugins.value.filter((p) => !isInternalPlugin(p.name))
+})
+
 // 所有指令
 const allCommands = computed(() => commands.value)
 const allRegexCommands = computed(() => regexCommands.value)
@@ -204,9 +247,13 @@ const systemCommands = computed(() => {
     filteredCommands = allCommands.value.filter(
       (c) => c.type === 'direct' && c.subType === 'system-setting'
     )
+    // 为系统设置添加统一图标
+    filteredCommands = filteredCommands.map((cmd) => ({
+      ...cmd,
+      icon: cmd.icon || settingsFillIcon
+    }))
   }
 
-  // 系统设置的图标已经在后端处理好了，直接返回
   return filteredCommands
 })
 

@@ -144,9 +144,18 @@ declare global {
           commands: any[]
           regexCommands: any[]
         }>
+
+        // 图片分析
+        analyzeImage: (imagePath: string) => Promise<{
+          isSimpleIcon: boolean
+          mainColor: string | null
+          isDark: boolean
+          needsAdaptation: boolean
+        }>
       }
     }
   }
 }
 
-export {}
+export { }
+

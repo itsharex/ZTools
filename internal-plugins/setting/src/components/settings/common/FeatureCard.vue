@@ -3,7 +3,12 @@
     <div class="feature-header">
       <div v-if="feature.icon" class="feature-icon">
         <span v-if="feature.icon.length <= 2" class="icon-emoji">{{ feature.icon }}</span>
-        <img v-else-if="!hasError" :src="feature.icon" draggable="false" @error="handleIconError" />
+        <AdaptiveIcon
+          v-else-if="!hasError"
+          :src="feature.icon"
+          draggable="false"
+          @error="handleIconError"
+        />
         <div v-else class="icon-placeholder">
           {{ (feature.explain || feature.name || 'F').charAt(0).toUpperCase() }}
         </div>
@@ -20,6 +25,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AdaptiveIcon from '../../common/AdaptiveIcon.vue'
 
 interface Feature {
   name?: string

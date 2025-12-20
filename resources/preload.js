@@ -403,7 +403,11 @@ window.ztools = {
 
     // ==================== 其他 API ====================
     revealInFinder: async (path) =>
-      await electron.ipcRenderer.invoke('internal:reveal-in-finder', path)
+      await electron.ipcRenderer.invoke('internal:reveal-in-finder', path),
+
+    // ==================== 图片分析 API ====================
+    analyzeImage: async (imagePath) =>
+      await electron.ipcRenderer.invoke('internal:analyze-image', imagePath)
   }
 }
 
