@@ -188,7 +188,19 @@ const internalSearchResults = computed(() => {
 
   // 否则正常搜索（无粘贴内容）
   const result = search(props.searchQuery)
-  return result.bestMatches
+
+  // 从 regexMatches 中过滤出 regex、img、files 类型（排除 over）
+  const priorityMatches = result.regexMatches.filter((cmd) => {
+    const cmdType = cmd.cmdType || cmd.matchCmd?.type
+    return cmdType === 'regex' || cmdType === 'img' || cmdType === 'files'
+  })
+
+  // 只有当没有模糊搜索结果时，才显示匹配指令
+  if (result.bestMatches.length > 0) {
+    return result.bestMatches
+  } else {
+    return priorityMatches
+  }
 })
 
 // 搜索结果（包含应用、插件、系统设置）
@@ -243,9 +255,15 @@ const recommendations = computed(() => {
   const searchResult = search(props.searchQuery)
   const regexResults = searchResult.regexMatches
 
+  // 只保留 over 类型的匹配指令
+  const overTypeResults = regexResults.filter((cmd) => {
+    const cmdType = cmd.cmdType || cmd.matchCmd?.type
+    return cmdType === 'over'
+  })
+
   // 去重：同一个 feature 只保留第一个匹配的 cmd
   const seenFeatures = new Set<string>()
-  const uniqueRegexResults = regexResults.filter((item) => {
+  const uniqueRegexResults = overTypeResults.filter((item) => {
     const featureKey = item.type === 'plugin' ? `${item.path}:${item.featureCode}` : item.path
     if (seenFeatures.has(featureKey)) {
       return false // 已经出现过，跳过
