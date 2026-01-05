@@ -1,5 +1,6 @@
 appId: link.eiot.ztools
 productName: ZTools
+publish: null
 directories:
   buildResources: build
 files:
