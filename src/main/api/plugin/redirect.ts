@@ -62,7 +62,7 @@ export class PluginRedirectAPI {
   }
 
   private async processRedirect(label: string | [string, string], payload?: any): Promise<void> {
-    console.log('processRedirect', label, payload)
+    // console.log('processRedirect', label, payload)
 
     // 检查 payload 类型：只支持字符串类型（用于 regex 或 over 类型的匹配指令）
     if (payload !== undefined && payload !== null && typeof payload !== 'string') {
@@ -162,7 +162,7 @@ export class PluginRedirectAPI {
         if (matches.length === 1) {
           // 只有一个匹配，直接打开
           const { plugin, feature, cmdName: matchCmdName, type } = matches[0]
-          console.log('重定向启动插件', matches[0])
+          // console.log('重定向启动插件', matches[0])
           this.launchPlugin(plugin, feature, matchCmdName, {
             payload,
             type: type

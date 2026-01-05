@@ -216,7 +216,10 @@ class APIManager {
       for (const feature of allFeatures) {
         if (feature.cmds && Array.isArray(feature.cmds)) {
           for (const cmd of feature.cmds) {
-            const cmdLabel = typeof cmd === 'string' ? cmd : cmd.label
+            if (typeof cmd === 'object') {
+              continue
+            }
+            const cmdLabel = cmd
             if (cmdLabel === cmdName) {
               targetFeature = feature
               targetCmdName = cmdLabel
